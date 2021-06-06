@@ -36,7 +36,40 @@ catch {
 
 #Start While Loop for Quitbox
 while ($quitboxOutput -ne "NO"){
+    $licenses = Get-AzureADSubscribedSku | Select-Object -Property Sku*,ConsumedUnits -ExpandProperty PrepaidUnits
 
+    $LicenseSelectWindow = New-Object System.Windows.Forms.Form
+
+    $LicenseSelectWindow.Text = "Select Licenses"
+    #$LicenseSelectWindow.Size = New-Object System.Drawing.Size(500,200)
+    $LicenseSelectWindow.AutoSize = $true
+    $LicenseSelectWindow.AutoSizeMode = "GrowAndShrink"
+    $LicenseSelectWindow.MinimizeBox = $false
+    $LicenseSelectWindow.MaximizeBox = $false
+    $LicenseSelectWindow.StartPosition = "CenterScreen"
+    $LicenseSelectWindow.FormBorderStyle = 'Fixed3D'
+
+    $CheckedListBox = New-Object System.Windows.Forms.CheckedListBox
+    $CheckedListBox.AutoSize = $true
+    $CheckedListBox.CheckOnClick = $true #so we only have to click once to check a box
+    foreach ($license in $licenses) {
+        $CheckedListBoxOutput = $license.SkuPartNumber + " -- " + ($license.Enabled-$License.ConsumedUnits) + " of " + $license.Enabled + " Available"
+        $CheckedListBox.Items.Add($CheckedListBoxOutput)
+    }
+    $CheckedListBox.ClearSelected()
+    $CheckedListBox.Dock = [System.Windows.Forms.DockStyle]::Fill
+    $LicenseSelectWindow.Controls.Add($CheckedListBox)
+
+    $OKButton = New-Object System.Windows.Forms.Button
+    $OKButton.Text = "Use Selected Licenses"
+    $OKButton.Dock = [System.Windows.Forms.DockStyle]::Bottom
+    $LicenseSelectWindow.Controls.Add($OKButton)
+
+    #put form in front of other windows
+    $LicenseSelectWindow.TopMost = $true
+
+    #display the form
+    $DisplayForm = $LicenseSelectWindow.ShowDialog()
 #Create Quit Prompt and Close While Loop
 $quitboxOutput = [System.Windows.Forms.MessageBox]::Show("Do you need to create another user?" , "User Creation Complete" , 4)
 }
