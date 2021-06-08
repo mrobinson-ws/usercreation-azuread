@@ -10,6 +10,10 @@ Param()
 [void] [System.Windows.Forms.Application]::EnableVisualStyles()
 #Set variable for loop to function
 $quitboxOutput = ""
+$SkuArray = [System.Collections.ArrayList]@()
+$SkuTable = @{
+    "DEVELOPERPACK_E5" = "DevPack E5 (No Teams or Audio)"
+}
 #####End of Declarations#####
 
 # Test And Connect To AzureAD If Needed
@@ -34,7 +38,7 @@ catch {
     Connect-ExchangeOnline
 }
 
-$SkuArray = [System.Collections.ArrayList]@()
+
 
 #Start While Loop for Quitbox
 while ($quitboxOutput -ne "NO"){
@@ -54,9 +58,12 @@ while ($quitboxOutput -ne "NO"){
     $CheckedListBox.AutoSize = $true
     $CheckedListBox.CheckOnClick = $true #so we only have to click once to check a box
     foreach ($license in $licenses) {
-        $CheckedListBoxOutput = $license.SkuPartNumber + " -- " + ($license.Enabled-$License.ConsumedUnits) + " of " + $license.Enabled + " Available"
-        $CheckedListBox.Items.Add($CheckedListBoxOutput)
-        $SkuArray.Add($license.SkuPartNumber)
+        $null = $SkuArray.Add($license.SkuPartNumber)
+        Clear-Variable HRSku -ErrorAction SilentlyContinue
+        $TempSku = $license.SkuPartNumber
+        $HRSku = $SkuTable.Item("$TempSku")
+        $CheckedListBoxOutput = $HRSku + " -- " + ($license.Enabled-$License.ConsumedUnits) + " of " + $license.Enabled + " Available"
+        $null = $CheckedListBox.Items.Add($CheckedListBoxOutput)
     }
     $CheckedListBox.ClearSelected()
     $CheckedListBox.Dock = [System.Windows.Forms.DockStyle]::Fill
