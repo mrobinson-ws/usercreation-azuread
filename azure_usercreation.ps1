@@ -34,6 +34,8 @@ catch {
     Connect-ExchangeOnline
 }
 
+$SkuArray = [System.Collections.ArrayList]@()
+
 #Start While Loop for Quitbox
 while ($quitboxOutput -ne "NO"){
     ##### Create License Selection Form #####
@@ -54,6 +56,7 @@ while ($quitboxOutput -ne "NO"){
     foreach ($license in $licenses) {
         $CheckedListBoxOutput = $license.SkuPartNumber + " -- " + ($license.Enabled-$License.ConsumedUnits) + " of " + $license.Enabled + " Available"
         $CheckedListBox.Items.Add($CheckedListBoxOutput)
+        $SkuArray.Add($license.SkuPartNumber)
     }
     $CheckedListBox.ClearSelected()
     $CheckedListBox.Dock = [System.Windows.Forms.DockStyle]::Fill
@@ -70,6 +73,9 @@ while ($quitboxOutput -ne "NO"){
 
     #display the form
     $DisplayForm = $LicenseSelectWindow.ShowDialog()
+    if ($OKButton.DialogResult -eq "OK") {
+        $SkuArray
+    }
 
 #Create Quit Prompt and Close While Loop
 $quitboxOutput = [System.Windows.Forms.MessageBox]::Show("Do you need to create another user?" , "User Creation Complete" , 4)
