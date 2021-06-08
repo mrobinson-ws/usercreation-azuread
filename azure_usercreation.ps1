@@ -52,7 +52,7 @@ while ($quitboxOutput -ne "NO"){
     $LicenseSelectWindow.MinimizeBox = $false
     $LicenseSelectWindow.MaximizeBox = $false
     $LicenseSelectWindow.StartPosition = "CenterScreen"
-    $LicenseSelectWindow.FormBorderStyle = 'Fixed3D'
+    $LicenseSelectWindow.FormBorderStyle = "Fixed3D"
 
     $CheckedListBox = New-Object System.Windows.Forms.CheckedListBox
     $CheckedListBox.AutoSize = $true
