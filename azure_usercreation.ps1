@@ -81,7 +81,7 @@ while ($quitboxOutput -ne "NO"){
     #display the form
     $DisplayForm = $LicenseSelectWindow.ShowDialog()
     if ($OKButton.DialogResult -eq "OK") {
-        $SkuArray
+        $CheckedListBox.CheckedItems
     }
 
 #Create Quit Prompt and Close While Loop
