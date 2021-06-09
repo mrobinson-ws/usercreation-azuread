@@ -8,9 +8,7 @@ Param()
 [void] [System.Reflection.Assembly]::LoadWithPartialName("System.Drawing") 
 [void] [System.Reflection.Assembly]::LoadWithPartialName("System.Windows.Forms")
 [void] [System.Windows.Forms.Application]::EnableVisualStyles()
-#Set variable for loop to function
 $quitboxOutput = ""
-$SkuArray = [System.Collections.ArrayList]@()
 $SkuTable = @{
     "DEVELOPERPACK_E5" = "DevPack E5 (No Teams or Audio)"
 }
@@ -58,10 +56,8 @@ while ($quitboxOutput -ne "NO"){
     $CheckedListBox.AutoSize = $true
     $CheckedListBox.CheckOnClick = $true #so we only have to click once to check a box
     foreach ($license in $licenses) {
-        $null = $SkuArray.Add($license.SkuPartNumber)
         Clear-Variable HRSku -ErrorAction SilentlyContinue
-        $TempSku = $license.SkuPartNumber
-        $HRSku = $SkuTable.Item("$TempSku")
+        $HRSku = $SkuTable.Item("$($license.SkuPartNumber)")
         $CheckedListBoxOutput = $HRSku + " -- " + ($license.Enabled-$License.ConsumedUnits) + " of " + $license.Enabled + " Available"
         $null = $CheckedListBox.Items.Add($CheckedListBoxOutput)
     }
@@ -79,7 +75,7 @@ while ($quitboxOutput -ne "NO"){
     $LicenseSelectWindow.TopMost = $true
 
     #display the form
-    $DisplayForm = $LicenseSelectWindow.ShowDialog()
+    $null = $LicenseSelectWindow.ShowDialog()
     if ($OKButton.DialogResult -eq "OK") {
         $CheckedListBox.CheckedItems
     }
