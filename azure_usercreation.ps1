@@ -9,8 +9,12 @@ Param()
 [void] [System.Reflection.Assembly]::LoadWithPartialName("System.Windows.Forms")
 [void] [System.Windows.Forms.Application]::EnableVisualStyles()
 $quitboxOutput = ""
-$SkuTable = @{
-    "DEVELOPERPACK_E5" = "DevPack E5 (No Teams or Audio)"
+$LicensesToAssign = New-Object -TypeName Microsoft.Open.AzureAD.Model.AssignedLicenses
+$SkuToFriendly = @{
+    "c42b9cae-ea4f-4ab7-9717-81576235ccac" = "DevPack E5 (No Teams or Audio)"
+}
+$FriendlyToSku = @{
+    "DevPack E5 (No Teams or Audio)" = "c42b9cae-ea4f-4ab7-9717-81576235ccac"
 }
 #####End of Declarations#####
 
@@ -40,6 +44,91 @@ catch {
 
 #Start While Loop for Quitbox
 while ($quitboxOutput -ne "NO"){
+    #####Create User Details Form#####
+    $userdetailForm = New-Object System.Windows.Forms.Form
+    $userdetailForm.Text = "Please Enter User Details"
+    $userdetailForm.Autosize = $true
+    $userdetailForm.StartPosition = 'CenterScreen'
+
+    $okButton = New-Object System.Windows.Forms.Button
+    $okButton.TabIndex = 4
+    $okbutton.Dock = [System.Windows.Forms.DockStyle]::Bottom
+    $okButton.Text = 'OK'
+    $okButton.DialogResult = [System.Windows.Forms.DialogResult]::OK
+    $userdetailForm.AcceptButton = $okButton
+    $userdetailForm.Controls.Add($okButton)
+
+    $cancelButton = New-Object System.Windows.Forms.Button
+    $cancelbutton.TabIndex = 5
+    $cancelButton.Dock = [System.Windows.Forms.DockStyle]::Bottom
+    $cancelButton.Text = 'Cancel'
+    $cancelButton.DialogResult = [System.Windows.Forms.DialogResult]::Cancel
+    $userdetailForm.CancelButton = $cancelButton
+    $userdetailForm.Controls.Add($cancelButton)
+
+    $passwordTextbox = New-Object System.Windows.Forms.TextBox
+    $passwordTextbox.TabIndex = 3
+    $passwordTextbox.Dock = [System.Windows.Forms.DockStyle]::Top
+    $userdetailForm.Controls.Add($passwordTextbox)
+    
+    $passwordLabel = New-Object System.Windows.Forms.Label
+    $passwordLabel.Dock = [System.Windows.Forms.DockStyle]::Top
+    $passwordLabel.Text = "Password"
+    $userdetailForm.Controls.Add($passwordLabel)
+
+    $usernameTextbox = New-Object System.Windows.Forms.TextBox
+    $usernameTextbox.TabIndex = 2
+    $usernameTextbox.Dock = [System.Windows.Forms.DockStyle]::Top
+    $userdetailForm.Controls.Add($usernameTextbox)
+
+    $usernameLabel = New-Object System.Windows.Forms.Label
+    $usernameLabel.Dock = [System.Windows.Forms.DockStyle]::Top
+    $usernameLabel.Text = "Username/Email"
+    $userdetailForm.Controls.Add($usernameLabel)
+
+    $lastnameTextbox = New-Object System.Windows.Forms.TextBox
+    $lastnameTextbox.TabIndex = 1
+    $lastnameTextbox.Dock = [System.Windows.Forms.DockStyle]::Top
+    $userdetailForm.Controls.Add($lastnameTextbox)
+    
+    $lastnameLabel = New-Object System.Windows.Forms.Label
+    $lastnameLabel.Dock = [System.Windows.Forms.DockStyle]::Top
+    $lastnameLabel.Text = "Last Name"
+    $userdetailForm.Controls.Add($lastnameLabel)
+
+    $firstnameTextbox = New-Object System.Windows.Forms.TextBox
+    $firstnameTextbox.TabIndex = 0
+    $firstnameTextbox.Dock = [System.Windows.Forms.DockStyle]::Top
+    $userdetailForm.Controls.Add($firstnameTextbox)
+
+    $firstnameLabel = New-Object System.Windows.Forms.Label
+    $firstnameLabel.Dock = [System.Windows.Forms.DockStyle]::Top
+    $firstnameLabel.Text = "First Name"
+    $userdetailForm.Controls.Add($firstnameLabel)
+
+    $userdetailForm.Topmost = $true
+
+    $userdetailForm.Add_Shown({$firstnameTextbox.Select()})
+    $result = $userdetailForm.ShowDialog()
+
+    if ($result -eq [System.Windows.Forms.DialogResult]::OK) {
+        $PasswordProfile = New-Object -TypeName Microsoft.Open.AzureAD.Model.PasswordProfile
+        $PasswordProfile.Password = $passwordTextbox.text
+        $username = $usernameTextbox.Text
+        $firstname = $firstnameTextbox.Text
+        $lastname = $lastnameTextbox.Text
+        $displayname = $firstname + " " + $lastname
+    }
+    else { Throw }
+
+    $PasswordProfile
+    $username
+    $firstname
+    $lastname
+    $displayname
+
+    #####End User Detail Form#####
+    
     ##### Create License Selection Form #####
     $licenses = Get-AzureADSubscribedSku | Select-Object -Property Sku*,ConsumedUnits -ExpandProperty PrepaidUnits
 
@@ -57,7 +146,7 @@ while ($quitboxOutput -ne "NO"){
     $CheckedListBox.CheckOnClick = $true #so we only have to click once to check a box
     foreach ($license in $licenses) {
         Clear-Variable HRSku -ErrorAction SilentlyContinue
-        $HRSku = $SkuTable.Item("$($license.SkuPartNumber)")
+        $HRSku = $SkuToFriendly.Item("$($license.SkuID)")
         $CheckedListBoxOutput = $HRSku + " -- " + ($license.Enabled-$License.ConsumedUnits) + " of " + $license.Enabled + " Available"
         $null = $CheckedListBox.Items.Add($CheckedListBoxOutput)
     }
@@ -80,6 +169,12 @@ while ($quitboxOutput -ne "NO"){
         $CheckedListBox.CheckedItems
     }
 
+    foreach($checkedlicense in $CheckedListBox.CheckedItems){
+        $converttosku = $checkedlicense -replace '\s--\s.*'
+        $SkuID = $FriendlyToSku.Item("$($converttosku)")
+        $LicensesToAssign.AddLicenses = $SkuID
+        $LicensesToAssign
+    }
 #Create Quit Prompt and Close While Loop
 $quitboxOutput = [System.Windows.Forms.MessageBox]::Show("Do you need to create another user?" , "User Creation Complete" , 4)
 }
