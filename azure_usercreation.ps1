@@ -130,7 +130,7 @@ while ($quitboxOutput -ne "NO"){
     #####End User Detail Form#####
     
     ##### Create License Selection Form #####
-    $licenses = Get-AzureADSubscribedSku | Select-Object -Property Sku*,ConsumedUnits -ExpandProperty PrepaidUnits
+    $Skus = Get-AzureADSubscribedSku | Select-Object -Property Sku*,ConsumedUnits -ExpandProperty PrepaidUnits
 
     $LicenseSelectWindow = New-Object System.Windows.Forms.Form
     $LicenseSelectWindow.Text = "Select Licenses"
@@ -144,10 +144,10 @@ while ($quitboxOutput -ne "NO"){
     $CheckedListBox = New-Object System.Windows.Forms.CheckedListBox
     $CheckedListBox.AutoSize = $true
     $CheckedListBox.CheckOnClick = $true #so we only have to click once to check a box
-    foreach ($license in $licenses) {
+    foreach ($Sku in $Skus) {
         Clear-Variable HRSku -ErrorAction SilentlyContinue
-        $HRSku = $SkuToFriendly.Item("$($license.SkuID)")
-        $CheckedListBoxOutput = $HRSku + " -- " + ($license.Enabled-$License.ConsumedUnits) + " of " + $license.Enabled + " Available"
+        $HRSku = $SkuToFriendly.Item("$($Sku.SkuID)")
+        $CheckedListBoxOutput = $HRSku + " -- " + ($Sku.Enabled-$License.ConsumedUnits) + " of " + $Sku.Enabled + " Available"
         $null = $CheckedListBox.Items.Add($CheckedListBoxOutput)
     }
     $CheckedListBox.ClearSelected()
@@ -171,9 +171,11 @@ while ($quitboxOutput -ne "NO"){
 
     foreach($checkedlicense in $CheckedListBox.CheckedItems){
         $converttosku = $checkedlicense -replace '\s--\s.*'
-        $SkuID = $FriendlyToSku.Item("$($converttosku)")
-        $LicensesToAssign.AddLicenses = $SkuID
-        $LicensesToAssign
+        $License = New-Object -TypeName Microsoft.Open.AzureAD.Model.AssignedLicense
+        $License.SkuID = $FriendlyToSku.Item("$($converttosku)")
+        $LicensesToAssign = New-Object -TypeName Microsoft.Open.AzureAD.Model.AssignedLicenses
+        $LicensesToAssign.AddLicenses = $License
+        #Set-AzureADUserLicense -ObjectId $userUPN -AssignedLicenses $LicensesToAssign
     }
 #Create Quit Prompt and Close While Loop
 $quitboxOutput = [System.Windows.Forms.MessageBox]::Show("Do you need to create another user?" , "User Creation Complete" , 4)
