@@ -51,7 +51,7 @@ while ($quitboxOutput -ne "NO"){
     $userdetailForm.StartPosition = 'CenterScreen'
 
     $okButton = New-Object System.Windows.Forms.Button
-    $okButton.TabIndex = 4
+    $okButton.TabIndex = 5
     $okbutton.Dock = [System.Windows.Forms.DockStyle]::Bottom
     $okButton.Text = 'OK'
     $okButton.DialogResult = [System.Windows.Forms.DialogResult]::OK
@@ -59,7 +59,7 @@ while ($quitboxOutput -ne "NO"){
     $userdetailForm.Controls.Add($okButton)
 
     $cancelButton = New-Object System.Windows.Forms.Button
-    $cancelbutton.TabIndex = 5
+    $cancelbutton.TabIndex = 6
     $cancelButton.Dock = [System.Windows.Forms.DockStyle]::Bottom
     $cancelButton.Text = 'Cancel'
     $cancelButton.DialogResult = [System.Windows.Forms.DialogResult]::Cancel
@@ -67,7 +67,7 @@ while ($quitboxOutput -ne "NO"){
     $userdetailForm.Controls.Add($cancelButton)
 
     $passwordTextbox = New-Object System.Windows.Forms.TextBox
-    $passwordTextbox.TabIndex = 3
+    $passwordTextbox.TabIndex = 4
     $passwordTextbox.Dock = [System.Windows.Forms.DockStyle]::Top
     $userdetailForm.Controls.Add($passwordTextbox)
     
@@ -76,6 +76,20 @@ while ($quitboxOutput -ne "NO"){
     $passwordLabel.Text = "Password"
     $userdetailForm.Controls.Add($passwordLabel)
 
+    $domainComboBox = New-Object System.Windows.Forms.ComboBox
+    $domainComboBox.TabIndex = 3
+    $domainComboBox.Dock = [System.Windows.Forms.DockStyle]::Top
+    $domainComboBox.DropDownStyle = [System.Windows.Forms.ComboBoxStyle]::DropDownList
+    foreach($domain in Get-AzureADDomain){
+        $null = $domainComboBox.Items.add($domain.Name)
+    }
+    $userdetailForm.Controls.Add($domainComboBox)
+    
+    $domainLabel = New-Object System.Windows.Forms.Label
+    $domainLabel.Dock = [System.Windows.Forms.DockStyle]::Top
+    $domainLabel.Text = "@"
+    $userdetailForm.Controls.Add($domainLabel)
+
     $usernameTextbox = New-Object System.Windows.Forms.TextBox
     $usernameTextbox.TabIndex = 2
     $usernameTextbox.Dock = [System.Windows.Forms.DockStyle]::Top
@@ -83,7 +97,7 @@ while ($quitboxOutput -ne "NO"){
 
     $usernameLabel = New-Object System.Windows.Forms.Label
     $usernameLabel.Dock = [System.Windows.Forms.DockStyle]::Top
-    $usernameLabel.Text = "Username/Email"
+    $usernameLabel.Text = "Username"
     $userdetailForm.Controls.Add($usernameLabel)
 
     $lastnameTextbox = New-Object System.Windows.Forms.TextBox
@@ -114,7 +128,7 @@ while ($quitboxOutput -ne "NO"){
     if ($result -eq [System.Windows.Forms.DialogResult]::OK) {
         $PasswordProfile = New-Object -TypeName Microsoft.Open.AzureAD.Model.PasswordProfile
         $PasswordProfile.Password = $passwordTextbox.text
-        $username = $usernameTextbox.Text
+        $username = $usernameTextbox.Text + "@" + $domainCombobox.Text
         $firstname = $firstnameTextbox.Text
         $lastname = $lastnameTextbox.Text
         $displayname = $firstname + " " + $lastname
