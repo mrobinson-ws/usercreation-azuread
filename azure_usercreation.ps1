@@ -306,11 +306,10 @@ while ($quitboxOutput -ne "NO"){
     $okButton.TabIndex = 5
     $okbutton.Dock = [System.Windows.Forms.DockStyle]::Bottom
     $okButton.Text = 'OK'
-    if( $passwordTextbox.Text.Length -and ($domainComboBox.SelectedIndex -ne -1) -and $usernameTextbox.Text.Length -and $lastnameTextbox.Text.Length -and $firstnameTextbox.Text.Length){
-        $okButton.Enabled=$true
-    }else{
-        $okButton.Enabled=$false
-	}
+    if( $passwordTextbox.Text.Length -and ($domainComboBox.SelectedIndex -ge 0) -and $usernameTextbox.Text.Length -and $lastnameTextbox.Text.Length -and $firstnameTextbox.Text.Length )
+        { $okButton.Enabled=$true }
+    else
+        { $okButton.Enabled=$false }
     $okButton.DialogResult = [System.Windows.Forms.DialogResult]::OK
     $userdetailForm.AcceptButton = $okButton
     
@@ -338,6 +337,7 @@ while ($quitboxOutput -ne "NO"){
     $domainComboBox.TabIndex = 3
     $domainComboBox.Dock = [System.Windows.Forms.DockStyle]::Top
     $domainComboBox.DropDownStyle = [System.Windows.Forms.ComboBoxStyle]::DropDownList
+    $domainComboBox.FormattingEnabled = $true
     foreach($domain in Get-AzureADDomain){
         $null = $domainComboBox.Items.add($domain.Name)
     }
@@ -383,12 +383,6 @@ while ($quitboxOutput -ne "NO"){
     $userdetailForm.Add_Shown({$firstnameTextbox.Select()})
     $result = $userdetailForm.ShowDialog()
 
-    if( $passwordTextbox.Text.Length -and ($domainComboBox.SelectedIndex -ne '-1') -and $usernameTextbox.Text.Length -and $lastnameTextbox.Text.Length -and $firstnameTextbox.Text.Length){
-        $okButton.Enabled=$true
-    }else{
-        $okButton.Enabled=$false
-	}
-  
     if ($result -eq [System.Windows.Forms.DialogResult]::OK) {
         $PasswordProfile = New-Object -TypeName Microsoft.Open.AzureAD.Model.PasswordProfile
         $PasswordProfile.Password = $passwordTextbox.text
