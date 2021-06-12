@@ -397,12 +397,15 @@ while ($quitboxOutput -ne "NO"){
         $UPN = $usernameTextbox.Text + "@" + $domainCombobox.Text
         $displayname = $firstnameTextbox.text + " " + $lastnameTextbox.Text
     }
-    else { Throw }
+    else { 
+        Write-Verbose "Exiting Script." 
+        Break 
+    }
     try {
         Write-Verbose -Message "Testing If User Exists"
-        Get-AzureAdUSer -ObjectID $UPN -ErrorAction Stop
+        Get-AzureAdUSer -ObjectID $UPN -ErrorAction Stop | Out-Null
         Write-Verbose -Message "User Exists, Exiting"
-        Throw
+        Break
     }
     catch {
         Write-Verbose -Message "Creating User"
