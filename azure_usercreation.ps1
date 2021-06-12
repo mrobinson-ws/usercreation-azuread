@@ -277,6 +277,10 @@ function CheckAllBoxes{
         $okButton.Enabled = $false
     }
 }
+Write-Verbose "Pulling Users, Storing in a Hash Table"
+$allGroups = @{}    
+foreach ($group in Get-AzureADGroup){ $allGRoups[$group.Displayname] = $group }
+Write-Verbose "Hash Table Filled"
 #####End of Declarations#####
 
 # Test And Connect To AzureAD If Needed
@@ -289,19 +293,6 @@ catch {
     Write-Verbose -Message "Connecting to Azure AD"
     Connect-AzureAD
 }
-
-#Test And Connect To Microsoft Exchange Online If Needed
-try {
-    Write-Verbose -Message "Testing connection to Microsoft Exchange Online"
-    Get-Mailbox -ErrorAction Stop | Out-Null
-    Write-Verbose -Message "Already connected to Microsoft Exchange Online"
-}
-catch {
-    Write-Verbose -Message "Connecting to Microsoft Exchange Online"
-    Connect-ExchangeOnline
-}
-
-
 
 #Start While Loop for Quitbox
 while ($quitboxOutput -ne "NO"){
@@ -422,10 +413,13 @@ while ($quitboxOutput -ne "NO"){
     if ($result -eq [System.Windows.Forms.DialogResult]::OK) {
         $PasswordProfile = New-Object -TypeName Microsoft.Open.AzureAD.Model.PasswordProfile
         $PasswordProfile.Password = $passwordTextbox.text
-        $username = $usernameTextbox.Text + "@" + $domainCombobox.Text
-        $firstname = $firstnameTextbox.Text
-        $lastname = $lastnameTextbox.Text
-        $displayname = $firstname + " " + $lastname
+        $UPN = $usernameTextbox.Text + "@" + $domainCombobox.Text
+        $displayname = $firstnameTextbox.text + " " + $lastnameTextbox.Text
+
+        $PasswordProfile
+        $UPN
+        $displayname
+        #New-AzureADUser -DisplayName $displayname -PasswordProfile $PasswordProfile -UserPrincipalName $UPN -AccountEnabled $true -MailNickName "$($usernameTextbox.Text)"
     }
     else { Throw }
     #####End User Detail Form#####
