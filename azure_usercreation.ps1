@@ -277,10 +277,6 @@ function CheckAllBoxes{
         $okButton.Enabled = $false
     }
 }
-Write-Verbose "Pulling Users, Storing in a Hash Table"
-$allGroups = @{}    
-foreach ($group in Get-AzureADGroup){ $allGRoups[$group.Displayname] = $group }
-Write-Verbose "Hash Table Filled"
 #####End of Declarations#####
 
 # Test And Connect To AzureAD If Needed
@@ -293,6 +289,11 @@ catch {
     Write-Verbose -Message "Connecting to Azure AD"
     Connect-AzureAD
 }
+
+Write-Verbose "Pulling Groups, Storing in a Hash Table"
+$allGroups = @{}    
+foreach ($group in Get-AzureADGroup){ $allGRoups[$group.Displayname] = $group }
+Write-Verbose "Hash Table Filled"
 
 #Start While Loop for Quitbox
 while ($quitboxOutput -ne "NO"){
@@ -390,38 +391,23 @@ while ($quitboxOutput -ne "NO"){
     $userdetailForm.Add_Shown({$firstnameTextbox.Select()})
     $result = $userdetailForm.ShowDialog()
 
-    if ($firstnameTextbox.TextChanged) {
-        $lastnameTextbox.Enabled = $true
-    }
-    
-    if ($lastnameTextbox.TextChanged) {
-        $usernameTextbox.Enabled = $true
-    }
-
-    if ($usernameTextbox.TextChanged) {
-        $domainComboBox.Enabled = $true
-    }
-
-    if ($domainComboBox.TextChanged) {
-        $passwordTextbox.Enabled = $true
-    }
-    
-    if ($passwordTextbox.TextChanged) {
-        $okButton.Enabled = $true
-    }
-    
     if ($result -eq [System.Windows.Forms.DialogResult]::OK) {
         $PasswordProfile = New-Object -TypeName Microsoft.Open.AzureAD.Model.PasswordProfile
         $PasswordProfile.Password = $passwordTextbox.text
         $UPN = $usernameTextbox.Text + "@" + $domainCombobox.Text
         $displayname = $firstnameTextbox.text + " " + $lastnameTextbox.Text
-
-        $PasswordProfile
-        $UPN
-        $displayname
-        #New-AzureADUser -DisplayName $displayname -PasswordProfile $PasswordProfile -UserPrincipalName $UPN -AccountEnabled $true -MailNickName "$($usernameTextbox.Text)"
     }
     else { Throw }
+    try {
+        Write-Verbose -Message "Testing If User Exists"
+        Get-AzureAdUSer -ObjectID $UPN -ErrorAction Stop
+        Write-Verbose -Message "User Exists, Exiting"
+        Throw
+    }
+    catch {
+        Write-Verbose -Message "Creating User"
+        New-AzureADUser -DisplayName $displayname -PasswordProfile $PasswordProfile -UserPrincipalName $UPN -AccountEnabled $true -MailNickName "$($usernameTextbox.Text)" -USageLocation "US"
+    }
     #####End User Detail Form#####
     
     ##### Create License Selection Form #####
@@ -462,17 +448,16 @@ while ($quitboxOutput -ne "NO"){
     #display the form
     $null = $LicenseSelectWindow.ShowDialog()
     if ($OKButton.DialogResult -eq "OK") {
-        $CheckedListBox.CheckedItems
-    }
-
-    foreach($checkedlicense in $CheckedListBox.CheckedItems){
-        Clear-Variable converttosku -ErrorAction SilentlyContinue
-        $converttosku = $checkedlicense -replace '\s--\s.*'
-        $License = New-Object -TypeName Microsoft.Open.AzureAD.Model.AssignedLicense
-        $License.SkuID = $FriendlyToSku.Item("$($converttosku)")
-        $LicensesToAssign = New-Object -TypeName Microsoft.Open.AzureAD.Model.AssignedLicenses
-        $LicensesToAssign.AddLicenses = $License
-    }
+        foreach($checkedlicense in $CheckedListBox.CheckedItems){
+            Clear-Variable converttosku -ErrorAction SilentlyContinue
+            $converttosku = $checkedlicense -replace '\s--\s.*'
+            $License = New-Object -TypeName Microsoft.Open.AzureAD.Model.AssignedLicense
+            $License.SkuID = $FriendlyToSku.Item("$($converttosku)")
+            $LicensesToAssign = New-Object -TypeName Microsoft.Open.AzureAD.Model.AssignedLicenses
+            $LicensesToAssign.AddLicenses = $License
+            Set-AzureADUserLicense -ObjectId $UPN -AssignedLicenses $LicensesToAssign
+        }
+    }    
     ##### End License Selection Form #####
 #Create Quit Prompt and Close While Loop
 $quitboxOutput = [System.Windows.Forms.MessageBox]::Show("Do you need to create another user?" , "User Creation Complete" , 4)
