@@ -9,7 +9,6 @@ Param()
 [void] [System.Reflection.Assembly]::LoadWithPartialName("System.Windows.Forms")
 [void] [System.Windows.Forms.Application]::EnableVisualStyles()
 $quitboxOutput = ""
-$LicensesToAssign = New-Object -TypeName Microsoft.Open.AzureAD.Model.AssignedLicenses
 $SkuToFriendly = @{
     "c42b9cae-ea4f-4ab7-9717-81576235ccac" = "DevPack E5 (No Teams or Audio)"
     "8f0c5670-4e56-4892-b06d-91c085d7004f" = "APP CONNECT IW"
@@ -452,6 +451,8 @@ while ($quitboxOutput -ne "NO"){
     if ($OKButton.DialogResult -eq "OK") {
         foreach($checkedlicense in $CheckedListBox.CheckedItems){
             Clear-Variable converttosku -ErrorAction SilentlyContinue
+            Clear-Variable License -ErrorAction SilentlyContinue
+            Clear-Variable LicensesToAssign -ErrorAction SilentlyContinue
             $converttosku = $checkedlicense -replace '\s--\s.*'
             $License = New-Object -TypeName Microsoft.Open.AzureAD.Model.AssignedLicense
             $License.SkuID = $FriendlyToSku.Item("$($converttosku)")
@@ -464,6 +465,8 @@ while ($quitboxOutput -ne "NO"){
     
     # Pull User ObjectID and Group ObjectID to add member to all groups selected, skipping dynamic
     Write-Verbose "Pulling User ObjectID, Please Select Groups Required"
+    Clear-Variable user -ErrorAction SilentlyContinue
+    Clear-Variable group -ErrorAction SilentlyContinue
     $user = Get-AzureADUser -ObjectID $UPN
     foreach($group in Get-AzureADMSGroup | Where-Object {$_.GroupTypes -notcontains "DynamicMembership"} | Select-Object DisplayName,Description,ObjectId | Sort-Object DisplayName | Out-GridView -Passthru -Title "Hold Ctrl to select multiple groups" | Select-Object -ExpandProperty ObjectId)
     {
