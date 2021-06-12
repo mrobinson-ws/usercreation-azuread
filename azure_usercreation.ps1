@@ -268,6 +268,15 @@ $FriendlyToSku = @{
     "Windows 10 Enterprise E5" = "488ba24a-39a9-4473-8ee5-19291e71b002"
     "WINDOWS STORE FOR BUSINESS" = "6470687e-a428-4b7a-bef2-8a291ad947c9"
 }
+function CheckAllBoxes{
+    if ( $passwordTextbox.Text.Length -and ($domainComboBox.SelectedIndex -ge 0) -and $usernameTextbox.Text.Length -and $firstnameTextbox.Text.Length -and $lastnameTextbox.Text.Length )
+    {
+        $okButton.Enabled = $true
+    }
+    else {
+        $okButton.Enabled = $false
+    }
+}
 #####End of Declarations#####
 
 # Test And Connect To AzureAD If Needed
@@ -330,7 +339,7 @@ while ($quitboxOutput -ne "NO"){
     $passwordTextbox = New-Object System.Windows.Forms.TextBox
     $passwordTextbox.TabIndex = 4
     $passwordTextbox.Dock = [System.Windows.Forms.DockStyle]::Top
-    $passwordTextbox.Enabled = $false
+    $passwordTextbox.Add_TextChanged({CheckAllBoxes})
     $userdetailForm.Controls.Add($passwordTextbox)
     
     $passwordLabel = New-Object System.Windows.Forms.Label
@@ -346,7 +355,7 @@ while ($quitboxOutput -ne "NO"){
     foreach($domain in Get-AzureADDomain){
         $null = $domainComboBox.Items.add($domain.Name)
     }
-    $domainComboBox.Enabled = $false
+    $domainCombobox.Add_TextChanged({CheckAllBoxes})
     $userdetailForm.Controls.Add($domainComboBox)
     
     $domainLabel = New-Object System.Windows.Forms.Label
@@ -357,7 +366,7 @@ while ($quitboxOutput -ne "NO"){
     $usernameTextbox = New-Object System.Windows.Forms.TextBox
     $usernameTextbox.TabIndex = 2
     $usernameTextbox.Dock = [System.Windows.Forms.DockStyle]::Top
-    $usernameTextbox.Enabled = $false
+    $usernameTextbox.Add_TextChanged({CheckAllBoxes})
     $userdetailForm.Controls.Add($usernameTextbox)
 
     $usernameLabel = New-Object System.Windows.Forms.Label
@@ -368,7 +377,7 @@ while ($quitboxOutput -ne "NO"){
     $lastnameTextbox = New-Object System.Windows.Forms.TextBox
     $lastnameTextbox.TabIndex = 1
     $lastnameTextbox.Dock = [System.Windows.Forms.DockStyle]::Top
-    $lastnameTextbox.Enabled = $false
+    $lastnameTextbox.Add_TextChanged({CheckAllBoxes})
     $userdetailForm.Controls.Add($lastnameTextbox)
     
     $lastnameLabel = New-Object System.Windows.Forms.Label
@@ -379,7 +388,7 @@ while ($quitboxOutput -ne "NO"){
     $firstnameTextbox = New-Object System.Windows.Forms.TextBox
     $firstnameTextbox.TabIndex = 0
     $firstnameTextbox.Dock = [System.Windows.Forms.DockStyle]::Top
-    $firstnameTextbox.Enabled = $true
+    $firstnameTextbox.Add_TextChanged({CheckAllBoxes})
     $userdetailForm.Controls.Add($firstnameTextbox)
 
     $firstnameLabel = New-Object System.Windows.Forms.Label
