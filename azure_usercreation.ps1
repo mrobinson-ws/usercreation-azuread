@@ -290,11 +290,6 @@ catch {
     Connect-AzureAD
 }
 
-Write-Verbose "Pulling Groups, Storing in a Hash Table"
-$allGroups = @{}    
-foreach ($group in Get-AzureADGroup){ $allGRoups[$group.Displayname] = $group }
-Write-Verbose "Hash Table Filled"
-
 #Start While Loop for Quitbox
 while ($quitboxOutput -ne "NO"){
     #####Create User Details Form#####
@@ -303,9 +298,12 @@ while ($quitboxOutput -ne "NO"){
     Clear-Variable usernameTextbox -ErrorAction SilentlyContinue
     Clear-Variable lastnameTextbox -ErrorAction SilentlyContinue
     Clear-Variable firstnameTextbox -ErrorAction SilentlyContinue
+    Clear-Variable displayname -ErrorAction SilentlyContinue
+    Clear-Variable PasswordProfile -ErrorAction SilentlyContinue
+    Clear-Variable UPN -ErrorAction SilentlyContinue
         
     $userdetailForm = New-Object System.Windows.Forms.Form
-    $userdetailForm.Text = "Please Enter User Details"
+    $userdetailForm.Text = "User Details"
     $userdetailForm.Autosize = $true
     $userdetailForm.StartPosition = 'CenterScreen'
     $userdetailForm.Topmost = $true
@@ -391,6 +389,7 @@ while ($quitboxOutput -ne "NO"){
     $userdetailForm.Add_Shown({$firstnameTextbox.Select()})
     $result = $userdetailForm.ShowDialog()
 
+    #Create variables if OK button is pressed
     if ($result -eq [System.Windows.Forms.DialogResult]::OK) {
         $PasswordProfile = New-Object -TypeName Microsoft.Open.AzureAD.Model.PasswordProfile
         $PasswordProfile.Password = $passwordTextbox.text
@@ -401,12 +400,14 @@ while ($quitboxOutput -ne "NO"){
         Write-Verbose "Exiting Script." 
         Break 
     }
+    #Test if User with matching UPN already exists, then exits
     try {
         Write-Verbose -Message "Testing If User Exists"
         Get-AzureAdUSer -ObjectID $UPN -ErrorAction Stop | Out-Null
         Write-Verbose -Message "User Exists, Exiting"
         Break
     }
+    #Otherwise, creates user
     catch {
         Write-Verbose -Message "Creating User"
         New-AzureADUser -DisplayName $displayname -PasswordProfile $PasswordProfile -UserPrincipalName $UPN -AccountEnabled $true -MailNickName "$($usernameTextbox.Text)" -USageLocation "US"
@@ -414,8 +415,6 @@ while ($quitboxOutput -ne "NO"){
     #####End User Detail Form#####
     
     ##### Create License Selection Form #####
-    $Skus = Get-AzureADSubscribedSku | Select-Object -Property Sku*,ConsumedUnits -ExpandProperty PrepaidUnits
-
     $LicenseSelectWindow = New-Object System.Windows.Forms.Form
     $LicenseSelectWindow.Text = "Select Licenses"
     $LicenseSelectWindow.AutoSize = $true
@@ -428,7 +427,7 @@ while ($quitboxOutput -ne "NO"){
     $CheckedListBox = New-Object System.Windows.Forms.CheckedListBox
     $CheckedListBox.AutoSize = $true
     $CheckedListBox.CheckOnClick = $true #so we only have to click once to check a box
-    foreach ($Sku in $Skus) {
+    foreach ($Sku in Get-AzureADSubscribedSku | Select-Object -Property Sku*,ConsumedUnits -ExpandProperty PrepaidUnits) {
         Clear-Variable HRSku -ErrorAction SilentlyContinue
         $HRSku = $SkuToFriendly.Item("$($Sku.SkuID)")
         if ($HRSku){ $CheckedListBoxOutput = $HRSku + " -- " + ($Sku.Enabled-$Sku.ConsumedUnits) + " of " + $Sku.Enabled + " Available"}
@@ -460,8 +459,18 @@ while ($quitboxOutput -ne "NO"){
             $LicensesToAssign.AddLicenses = $License
             Set-AzureADUserLicense -ObjectId $UPN -AssignedLicenses $LicensesToAssign
         }
-    }    
+    }
     ##### End License Selection Form #####
+    
+    # Pull User ObjectID and Group ObjectID to add member to all groups selected, skipping dynamic
+    Write-Verbose "Pulling User ObjectID, Please Select Groups Required"
+    $user = Get-AzureADUser -ObjectID $UPN
+    foreach($group in Get-AzureADMSGroup | Where-Object {$_.GroupTypes -notcontains "DynamicMembership"} | Select-Object DisplayName,Description,ObjectId | Sort-Object DisplayName | Out-GridView -Passthru -Title "Hold Ctrl to select multiple groups" | Select-Object -ExpandProperty ObjectId)
+    {
+        Add-AzureADGroupMember -ObjectId $group -RefObjectId $user.ObjectID
+    }
+    Write-Verbose "Selected Groups Added"
+
 #Create Quit Prompt and Close While Loop
 $quitboxOutput = [System.Windows.Forms.MessageBox]::Show("Do you need to create another user?" , "User Creation Complete" , 4)
 }
