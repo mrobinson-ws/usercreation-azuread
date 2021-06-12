@@ -297,20 +297,24 @@ catch {
 #Start While Loop for Quitbox
 while ($quitboxOutput -ne "NO"){
     #####Create User Details Form#####
+    Clear-Variable passwordTextbox -ErrorAction SilentlyContinue
+    Clear-Variable domainComboBox -ErrorAction SilentlyContinue
+    Clear-Variable usernameTextbox -ErrorAction SilentlyContinue
+    Clear-Variable lastnameTextbox -ErrorAction SilentlyContinue
+    Clear-Variable firstnameTextbox -ErrorAction SilentlyContinue
+        
     $userdetailForm = New-Object System.Windows.Forms.Form
     $userdetailForm.Text = "Please Enter User Details"
     $userdetailForm.Autosize = $true
     $userdetailForm.StartPosition = 'CenterScreen'
+    $userdetailForm.Topmost = $true
 
     $okButton = New-Object System.Windows.Forms.Button
     $okButton.TabIndex = 5
     $okbutton.Dock = [System.Windows.Forms.DockStyle]::Bottom
     $okButton.Text = 'OK'
-    if( $passwordTextbox.Text.Length -and ($domainComboBox.SelectedIndex -ge 0) -and $usernameTextbox.Text.Length -and $lastnameTextbox.Text.Length -and $firstnameTextbox.Text.Length )
-        { $okButton.Enabled=$true }
-    else
-        { $okButton.Enabled=$false }
     $okButton.DialogResult = [System.Windows.Forms.DialogResult]::OK
+    $okButton.Enabled = $false
     $userdetailForm.AcceptButton = $okButton
     
     $userdetailForm.Controls.Add($okButton)
@@ -326,6 +330,7 @@ while ($quitboxOutput -ne "NO"){
     $passwordTextbox = New-Object System.Windows.Forms.TextBox
     $passwordTextbox.TabIndex = 4
     $passwordTextbox.Dock = [System.Windows.Forms.DockStyle]::Top
+    $passwordTextbox.Enabled = $false
     $userdetailForm.Controls.Add($passwordTextbox)
     
     $passwordLabel = New-Object System.Windows.Forms.Label
@@ -341,6 +346,7 @@ while ($quitboxOutput -ne "NO"){
     foreach($domain in Get-AzureADDomain){
         $null = $domainComboBox.Items.add($domain.Name)
     }
+    $domainComboBox.Enabled = $false
     $userdetailForm.Controls.Add($domainComboBox)
     
     $domainLabel = New-Object System.Windows.Forms.Label
@@ -351,6 +357,7 @@ while ($quitboxOutput -ne "NO"){
     $usernameTextbox = New-Object System.Windows.Forms.TextBox
     $usernameTextbox.TabIndex = 2
     $usernameTextbox.Dock = [System.Windows.Forms.DockStyle]::Top
+    $usernameTextbox.Enabled = $false
     $userdetailForm.Controls.Add($usernameTextbox)
 
     $usernameLabel = New-Object System.Windows.Forms.Label
@@ -361,6 +368,7 @@ while ($quitboxOutput -ne "NO"){
     $lastnameTextbox = New-Object System.Windows.Forms.TextBox
     $lastnameTextbox.TabIndex = 1
     $lastnameTextbox.Dock = [System.Windows.Forms.DockStyle]::Top
+    $lastnameTextbox.Enabled = $false
     $userdetailForm.Controls.Add($lastnameTextbox)
     
     $lastnameLabel = New-Object System.Windows.Forms.Label
@@ -371,6 +379,7 @@ while ($quitboxOutput -ne "NO"){
     $firstnameTextbox = New-Object System.Windows.Forms.TextBox
     $firstnameTextbox.TabIndex = 0
     $firstnameTextbox.Dock = [System.Windows.Forms.DockStyle]::Top
+    $firstnameTextbox.Enabled = $true
     $userdetailForm.Controls.Add($firstnameTextbox)
 
     $firstnameLabel = New-Object System.Windows.Forms.Label
@@ -378,11 +387,29 @@ while ($quitboxOutput -ne "NO"){
     $firstnameLabel.Text = "First Name"
     $userdetailForm.Controls.Add($firstnameLabel)
 
-    $userdetailForm.Topmost = $true
-
     $userdetailForm.Add_Shown({$firstnameTextbox.Select()})
     $result = $userdetailForm.ShowDialog()
 
+    if ($firstnameTextbox.TextChanged) {
+        $lastnameTextbox.Enabled = $true
+    }
+    
+    if ($lastnameTextbox.TextChanged) {
+        $usernameTextbox.Enabled = $true
+    }
+
+    if ($usernameTextbox.TextChanged) {
+        $domainComboBox.Enabled = $true
+    }
+
+    if ($domainComboBox.TextChanged) {
+        $passwordTextbox.Enabled = $true
+    }
+    
+    if ($passwordTextbox.TextChanged) {
+        $okButton.Enabled = $true
+    }
+    
     if ($result -eq [System.Windows.Forms.DialogResult]::OK) {
         $PasswordProfile = New-Object -TypeName Microsoft.Open.AzureAD.Model.PasswordProfile
         $PasswordProfile.Password = $passwordTextbox.text
