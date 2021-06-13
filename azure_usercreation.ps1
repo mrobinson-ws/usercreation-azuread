@@ -600,6 +600,7 @@ while ($quitboxOutput -ne "NO"){
             Write-Verbose "Selected Groups Added"
             if($CustomAttribute1Textbox.Text){
             Set-Mailbox $UPN -CustomAttribute1 $CustomAttribute1Textbox.Text
+            Write-Verbose "Added CustomAttribute1 As Mailbox Now Exists"
             }
         }
     }#End Mailbox Check Loop
