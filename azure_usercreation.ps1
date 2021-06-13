@@ -1,4 +1,4 @@
-#Requires -Modules AzureAD, ExchangeOnlineManagement, Microsoft.Online.SharePoint.PowerShell
+#Requires -Modules AzureAD, ExchangeOnlineManagement
 
 #####Declarations#####
 #Allow -Verbose to Work
@@ -297,6 +297,16 @@ catch {
     Write-Verbose -Message "Connecting to Azure AD"
     Connect-AzureAD
 }
+#Test And Connect To Microsoft Exchange Online If Needed
+try {
+    Write-Verbose -Message "Testing connection to Microsoft Exchange Online"
+    Get-Mailbox -ErrorAction Stop | Out-Null
+    Write-Verbose -Message "Already connected to Microsoft Exchange Online"
+}
+catch {
+    Write-Verbose -Message "Connecting to Microsoft Exchange Online"
+    Connect-ExchangeOnline
+}
 
 #Start While Loop for Quitbox
 while ($quitboxOutput -ne "NO"){
@@ -495,13 +505,28 @@ while ($quitboxOutput -ne "NO"){
     Write-Verbose "Pulling User ObjectID, Please Select Groups Required"
     Clear-Variable user -ErrorAction SilentlyContinue
     Clear-Variable group -ErrorAction SilentlyContinue
+    Clear-Variable MailboxExistsCheck -ErrorAction SilentlyContinue
     $user = Get-AzureADUser -ObjectID $UPN
-    foreach($group in Get-AzureADMSGroup | Where-Object {$_.GroupTypes -notcontains "DynamicMembership"} | Select-Object DisplayName,Description,ObjectId | Sort-Object DisplayName | Out-GridView -Passthru -Title "Hold Ctrl to select multiple groups" | Select-Object -ExpandProperty ObjectId)
-    {
-        Add-AzureADGroupMember -ObjectId $group -RefObjectId $user.ObjectID
+    #Start Mailbox Check Loop
+    while ($MailboxExistsCheck -ne "YES") {
+    try {
+        Get-EXOMailbox $UPN -ErrorAction Throw | Out-Null
+        $MailboxExistsCheck = "YES"
     }
-    Write-Verbose "Selected Groups Added"
-
+    catch {
+        Write-Verbose "Mailbox Does Not Exist, Waiting 60 Seconds and Trying Again"
+        Start-Sleep -Seconds 60
+        $MailboxExistsCheck = "NO"
+    }
+    Write-Verbose "Mailbox Exists, Please Select Groups To Add"
+    if($MailboxExistsCheck = "YES"){
+            foreach($group in Get-AzureADMSGroup | Where-Object {$_.GroupTypes -notcontains "DynamicMembership"} | Select-Object DisplayName,Description,ObjectId | Sort-Object DisplayName | Out-GridView -Passthru -Title "Hold Ctrl to select multiple groups" | Select-Object -ExpandProperty ObjectId)
+            {
+                Add-AzureADGroupMember -ObjectId $group -RefObjectId $user.ObjectID
+            }
+            Write-Verbose "Selected Groups Added"
+        }
+    }#End Mailbox Check Loop
 #Create Quit Prompt and Close While Loop
 $quitboxOutput = [System.Windows.Forms.MessageBox]::Show("Do you need to create another user?" , "User Creation Complete" , 4)
 }
