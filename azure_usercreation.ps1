@@ -8,7 +8,9 @@ Param()
 [void] [System.Reflection.Assembly]::LoadWithPartialName("System.Drawing") 
 [void] [System.Reflection.Assembly]::LoadWithPartialName("System.Windows.Forms")
 [void] [System.Windows.Forms.Application]::EnableVisualStyles()
+#Allow Quitbox to work
 $quitboxOutput = ""
+#Sku Lookup Table
 $SkuToFriendly = @{
     "c42b9cae-ea4f-4ab7-9717-81576235ccac" = "DevPack E5 (No Teams or Audio)"
     "8f0c5670-4e56-4892-b06d-91c085d7004f" = "APP CONNECT IW"
@@ -138,6 +140,7 @@ $SkuToFriendly = @{
     "488ba24a-39a9-4473-8ee5-19291e71b002" = "Windows 10 Enterprise E5"
     "6470687e-a428-4b7a-bef2-8a291ad947c9" = "WINDOWS STORE FOR BUSINESS"
 }
+#Sku Reverse Lookup Table
 $FriendlyToSku = @{
     "DevPack E5 (No Teams or Audio)" = "c42b9cae-ea4f-4ab7-9717-81576235ccac"
     "APP CONNECT IW" = "8f0c5670-4e56-4892-b06d-91c085d7004f"
@@ -267,6 +270,12 @@ $FriendlyToSku = @{
     "Windows 10 Enterprise E5" = "488ba24a-39a9-4473-8ee5-19291e71b002"
     "WINDOWS STORE FOR BUSINESS" = "6470687e-a428-4b7a-bef2-8a291ad947c9"
 }
+#Usage Location Lookup Table
+$UsageLocations=@{
+    "United States" = "US"
+    "United Kingdom" = "UK"
+}
+#Verification Check to enable OK button
 function CheckAllBoxes{
     if ( $passwordTextbox.Text.Length -and ($domainComboBox.SelectedIndex -ge 0) -and $usernameTextbox.Text.Length -and $firstnameTextbox.Text.Length -and $lastnameTextbox.Text.Length )
     {
@@ -308,7 +317,7 @@ while ($quitboxOutput -ne "NO"){
     $userdetailForm.Topmost = $true
 
     $okButton = New-Object System.Windows.Forms.Button
-    $okButton.TabIndex = 5
+    $okButton.TabIndex = 6
     $okbutton.Dock = [System.Windows.Forms.DockStyle]::Bottom
     $okButton.Text = 'OK'
     $okButton.DialogResult = [System.Windows.Forms.DialogResult]::OK
@@ -318,13 +327,26 @@ while ($quitboxOutput -ne "NO"){
     $userdetailForm.Controls.Add($okButton)
 
     $cancelButton = New-Object System.Windows.Forms.Button
-    $cancelbutton.TabIndex = 6
+    $cancelbutton.TabIndex = 7
     $cancelButton.Dock = [System.Windows.Forms.DockStyle]::Bottom
     $cancelButton.Text = 'Cancel'
     $cancelButton.DialogResult = [System.Windows.Forms.DialogResult]::Cancel
     $userdetailForm.CancelButton = $cancelButton
     $userdetailForm.Controls.Add($cancelButton)
 
+    $UsageLocationComboBox = New-Object System.Windows.Forms.ComboBox
+    $UsageLocationCombobox.TabIndex = 5
+    $UsageLocationComboBox.Dock = [System.Windows.Forms.DockStyle]::Top
+    $UsageLocationComboBox.DropDownStyle = [System.Windows.Forms.ComboBoxStyle]::DropDownList
+    $UsageLocationComboBox.FormattingEnabled = $true
+    foreach($UsageLocation in $UsageLocations.keys)
+    {
+        $null = $UsageLocationComboBox.Items.Add($usagelocation)
+    }
+    $UsageLocationComboBox.SelectedIndex = 0
+    $UsageLocationComboBox.Add_TextChanged({CheckAllBoxes})
+    $userdetailForm.Controls.Add($UsageLocationComboBox)
+    
     $passwordTextbox = New-Object System.Windows.Forms.TextBox
     $passwordTextbox.TabIndex = 4
     $passwordTextbox.Dock = [System.Windows.Forms.DockStyle]::Top
@@ -387,13 +409,16 @@ while ($quitboxOutput -ne "NO"){
 
     $userdetailForm.Add_Shown({$firstnameTextbox.Select()})
     $result = $userdetailForm.ShowDialog()
+    #####End User Details Form#####
 
+    #####User Detail Functionality#####
     #Create variables if OK button is pressed
     if ($result -eq [System.Windows.Forms.DialogResult]::OK) {
         $PasswordProfile = New-Object -TypeName Microsoft.Open.AzureAD.Model.PasswordProfile
         $PasswordProfile.Password = $passwordTextbox.text
         $UPN = $usernameTextbox.Text + "@" + $domainCombobox.Text
         $displayname = $firstnameTextbox.text + " " + $lastnameTextbox.Text
+        $usageloc = $UsageLocations[$UsageLocationComboBox.Text]
     }
     else { 
         Write-Verbose "Exiting Script." 
@@ -409,9 +434,9 @@ while ($quitboxOutput -ne "NO"){
     #Otherwise, creates user
     catch {
         Write-Verbose -Message "Creating User"
-        New-AzureADUser -DisplayName $displayname -PasswordProfile $PasswordProfile -UserPrincipalName $UPN -AccountEnabled $true -MailNickName "$($usernameTextbox.Text)" -USageLocation "US"
+        New-AzureADUser -DisplayName $displayname -PasswordProfile $PasswordProfile -UserPrincipalName $UPN -AccountEnabled $true -MailNickName "$($usernameTextbox.Text)" -USageLocation $usageloc
     }
-    #####End User Detail Form#####
+    #####End User Detail Functionality#####
     
     ##### Create License Selection Form #####
     $LicenseSelectWindow = New-Object System.Windows.Forms.Form
@@ -448,6 +473,9 @@ while ($quitboxOutput -ne "NO"){
 
     #display the form
     $null = $LicenseSelectWindow.ShowDialog()
+    #####End License Selection Form#####
+
+    #####License Selection Functionality#####
     if ($OKButton.DialogResult -eq "OK") {
         foreach($checkedlicense in $CheckedListBox.CheckedItems){
             Clear-Variable converttosku -ErrorAction SilentlyContinue
@@ -461,8 +489,8 @@ while ($quitboxOutput -ne "NO"){
             Set-AzureADUserLicense -ObjectId $UPN -AssignedLicenses $LicensesToAssign
         }
     }
-    ##### End License Selection Form #####
-    
+        
+    #####Group Out-GridView to Select Groups#####
     # Pull User ObjectID and Group ObjectID to add member to all groups selected, skipping dynamic
     Write-Verbose "Pulling User ObjectID, Please Select Groups Required"
     Clear-Variable user -ErrorAction SilentlyContinue
