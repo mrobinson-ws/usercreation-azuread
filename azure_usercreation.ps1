@@ -448,6 +448,80 @@ while ($quitboxOutput -ne "NO"){
     }
     #####End User Detail Functionality#####
     
+    #####Start Extra User Detail Form#####
+    $additionaldetailForm = New-Object System.Windows.Forms.Form
+    $additionaldetailForm.Text = "Addtional Details"
+    $additionaldetailForm.Autosize = $true
+    $additionaldetailForm.StartPosition = 'CenterScreen'
+    $additionaldetailForm.Topmost = $true
+
+    $okButton = New-Object System.Windows.Forms.Button
+    $okButton.TabIndex = 3
+    $okbutton.Dock = [System.Windows.Forms.DockStyle]::Bottom
+    $okButton.Text = 'OK'
+    $okButton.DialogResult = [System.Windows.Forms.DialogResult]::OK
+    $additionaldetailForm.AcceptButton = $okButton
+    $additionaldetailForm.Controls.Add($okButton)
+
+    $cancelButton = New-Object System.Windows.Forms.Button
+    $cancelbutton.TabIndex = 4
+    $cancelButton.Dock = [System.Windows.Forms.DockStyle]::Bottom
+    $cancelButton.Text = 'Cancel'
+    $cancelButton.DialogResult = [System.Windows.Forms.DialogResult]::Cancel
+    $additionaldetailForm.CancelButton = $cancelButton
+    $additionaldetailForm.Controls.Add($cancelButton)
+
+    $CustomAttribute1Textbox = New-Object System.Windows.Forms.TextBox
+    $CustomAttribute1Textbox.TabIndex = 2
+    $CustomAttribute1Textbox.Dock = [System.Windows.Forms.DockStyle]::Top
+    $additionaldetailForm.Controls.Add($CustomAttribute1Textbox)
+
+    $CustomAttribute1Label = New-Object System.Windows.Forms.Label
+    $CustomAttribute1Label.Dock = [System.Windows.Forms.DockStyle]::Top
+    $CustomAttribute1Label.Text = "Custom Attribute 1"
+    $additionaldetailForm.Controls.Add($CustomAttribute1Label)
+
+    $stateTextbox = New-Object System.Windows.Forms.TextBox
+    $stateTextbox.TabIndex = 1
+    $stateTextbox.Dock = [System.Windows.Forms.DockStyle]::Top
+    $additionaldetailForm.Controls.Add($stateTextbox)
+
+    $stateLabel = New-Object System.Windows.Forms.Label
+    $stateLabel.Dock = [System.Windows.Forms.DockStyle]::Top
+    $stateLabel.Text = "State"
+    $additionaldetailForm.Controls.Add($stateLabel)
+
+    $cityTextbox = New-Object System.Windows.Forms.TextBox
+    $cityTextbox.TabIndex = 0
+    $cityTextbox.Dock = [System.Windows.Forms.DockStyle]::Top
+    $additionaldetailForm.Controls.Add($cityTextbox)
+
+    $cityLabel = New-Object System.Windows.Forms.Label
+    $cityLabel.Dock = [System.Windows.Forms.DockStyle]::Top
+    $cityLabel.Text = "City"
+    $additionaldetailForm.Controls.Add($cityLabel)
+
+    $result = $additionaldetailForm.ShowDialog()
+    #####End Extra Details Form#####
+
+    #####Extra Detail Functionality#####
+    if ($result -eq [System.Windows.Forms.DialogResult]::OK) {
+        if($cityTextbox.Text){
+            Set-AzureADUser -ObjectId $UPN -City $cityTextbox.Text
+        }
+        if($stateTextbox.Text){
+            Set-AzureADUser -ObjectID $UPN -State $stateTextbox.Text
+        }
+        if($CustomAttribute1Textbox.Text){
+            Write-Verbose "Waiting To Set CustomAtrribute1 Until Mailbox is Created"
+        }
+    }
+    else { 
+        Write-Verbose "Exiting Script." 
+        Break
+    }
+    #####End Extra Details Functionality#####    
+    
     ##### Create License Selection Form #####
     $LicenseSelectWindow = New-Object System.Windows.Forms.Form
     $LicenseSelectWindow.Text = "Select Licenses"
@@ -502,7 +576,7 @@ while ($quitboxOutput -ne "NO"){
         
     #####Group Out-GridView to Select Groups#####
     # Pull User ObjectID and Group ObjectID to add member to all groups selected, skipping dynamic
-    Write-Verbose "Pulling User ObjectID, Please Select Groups Required"
+    Write-Verbose "Please Select Groups Required"
     Clear-Variable user -ErrorAction SilentlyContinue
     Clear-Variable group -ErrorAction SilentlyContinue
     Clear-Variable MailboxExistsCheck -ErrorAction SilentlyContinue
@@ -520,11 +594,13 @@ while ($quitboxOutput -ne "NO"){
     }
     Write-Verbose "Mailbox Exists, Please Select Groups To Add"
     if($MailboxExistsCheck = "YES"){
-            foreach($group in Get-AzureADMSGroup | Where-Object {$_.GroupTypes -notcontains "DynamicMembership"} | Select-Object DisplayName,Description,ObjectId | Sort-Object DisplayName | Out-GridView -Passthru -Title "Hold Ctrl to select multiple groups" | Select-Object -ExpandProperty ObjectId)
-            {
+            foreach($group in Get-AzureADMSGroup | Where-Object {$_.GroupTypes -notcontains "DynamicMembership"} | Select-Object DisplayName,Description,ObjectId | Sort-Object DisplayName | Out-GridView -Passthru -Title "Hold Ctrl to select multiple groups" | Select-Object -ExpandProperty ObjectId){
                 Add-AzureADGroupMember -ObjectId $group -RefObjectId $user.ObjectID
             }
             Write-Verbose "Selected Groups Added"
+            if($CustomAttribute1Textbox.Text){
+            Set-Mailbox $UPN -CustomAttribute1 $CustomAttribute1Textbox.Text
+            }
         }
     }#End Mailbox Check Loop
 #Create Quit Prompt and Close While Loop
