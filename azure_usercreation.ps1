@@ -444,7 +444,7 @@ while ($quitboxOutput -ne "NO"){
     #Otherwise, creates user
     catch {
         Write-Verbose -Message "Creating User"
-        New-AzureADUser -DisplayName $displayname -PasswordProfile $PasswordProfile -UserPrincipalName $UPN -AccountEnabled $true -MailNickName "$($usernameTextbox.Text)" -USageLocation $usageloc
+        $null = New-AzureADUser -DisplayName $displayname -PasswordProfile $PasswordProfile -UserPrincipalName $UPN -AccountEnabled $true -MailNickName "$($usernameTextbox.Text)" -USageLocation $usageloc
     }
     #####End User Detail Functionality#####
     
@@ -583,15 +583,16 @@ while ($quitboxOutput -ne "NO"){
     $user = Get-AzureADUser -ObjectID $UPN
     #Start Mailbox Check Loop
     while ($MailboxExistsCheck -ne "YES") {
-    try {
-        Get-EXOMailbox $UPN -ErrorAction Throw | Out-Null
-        $MailboxExistsCheck = "YES"
-    }
-    catch {
-        Write-Verbose "Mailbox Does Not Exist, Waiting 60 Seconds and Trying Again"
-        Start-Sleep -Seconds 60
-        $MailboxExistsCheck = "NO"
-    }
+        try {
+            Get-EXOMailbox $UPN -ErrorAction Throw | Out-Null
+            $MailboxExistsCheck = "YES"
+        }
+        catch {
+            Write-Verbose "Mailbox Does Not Exist, Waiting 60 Seconds and Trying Again"
+            Start-Sleep -Seconds 60
+            $MailboxExistsCheck = "NO"
+        }
+    }#End Mailbox Check Loop
     Write-Verbose "Mailbox Exists, Please Select Groups To Add"
     if($MailboxExistsCheck = "YES"){
             foreach($group in Get-AzureADMSGroup | Where-Object {$_.GroupTypes -notcontains "DynamicMembership"} | Select-Object DisplayName,Description,ObjectId | Sort-Object DisplayName | Out-GridView -Passthru -Title "Hold Ctrl to select multiple groups" | Select-Object -ExpandProperty ObjectId){
@@ -603,7 +604,7 @@ while ($quitboxOutput -ne "NO"){
             Write-Verbose "Added CustomAttribute1 As Mailbox Now Exists"
             }
         }
-    }#End Mailbox Check Loop
+    
 #Create Quit Prompt and Close While Loop
 $quitboxOutput = [System.Windows.Forms.MessageBox]::Show("Do you need to create another user?" , "User Creation Complete" , 4)
 }
