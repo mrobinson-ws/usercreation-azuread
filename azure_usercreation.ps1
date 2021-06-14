@@ -275,6 +275,24 @@ $UsageLocations=@{
     "United States" = "US"
     "United Kingdom" = "UK"
 }
+
+#Function to Check If Mailbox Exists Before Touching It
+function MailboxExistCheck {
+    Write-Verbose "Checking If Mailbox Exists"
+    Clear-Variable MailboxExistsCheck -ErrorAction SilentlyContinue
+    #Start Mailbox Check Wait Loop
+    while ($MailboxExistsCheck -ne "YES") {
+    try {
+        Get-EXOMailbox $UPN -ErrorAction Throw | Out-Null
+        $MailboxExistsCheck = "YES"
+    }
+    catch {
+        Write-Verbose "Mailbox Does Not Exist, Waiting 60 Seconds and Trying Again"
+        Start-Sleep -Seconds 60
+        $MailboxExistsCheck = "NO"
+        }
+    }#End Mailbox Check Wait Loop    
+}
 #Verification Check to enable OK button
 function CheckAllBoxes{
     if ( $passwordTextbox.Text.Length -and ($domainComboBox.SelectedIndex -ge 0) -and $usernameTextbox.Text.Length -and $firstnameTextbox.Text.Length -and $lastnameTextbox.Text.Length )
@@ -513,20 +531,7 @@ while ($quitboxOutput -ne "NO"){
             Set-AzureADUser -ObjectID $UPN -State $stateTextbox.Text
         }
         if($CustomAttribute1Textbox.Text){
-            Write-Verbose "Checking If Mailbox Exists"
-            Clear-Variable MailboxExistsCheck -ErrorAction SilentlyContinue
-            #Start Mailbox Check Loop
-            while ($MailboxExistsCheck -ne "YES") {
-                try {
-                    Get-EXOMailbox $UPN -ErrorAction Throw | Out-Null
-                    $MailboxExistsCheck = "YES"
-                }
-                catch {
-                    Write-Verbose "Mailbox Does Not Exist, Waiting 60 Seconds and Trying Again"
-                    Start-Sleep -Seconds 60
-                    $MailboxExistsCheck = "NO"
-                }
-            }#End Mailbox Check Loop
+            MailboxExistCheck            
             Set-Mailbox $UPN -CustomAttribute1 $CustomAttribute1Textbox.Text
             Write-Verbose "Mailbox Exists, Added CustomAttribute1"
         }
@@ -593,21 +598,8 @@ while ($quitboxOutput -ne "NO"){
     # Pull User ObjectID and Group ObjectID to add member to all groups selected, skipping dynamic
     Clear-Variable user -ErrorAction SilentlyContinue
     Clear-Variable group -ErrorAction SilentlyContinue
-    Write-Verbose "Checking If Mailbox Exists"
-    Clear-Variable MailboxExistsCheck -ErrorAction SilentlyContinue
     $user = Get-AzureADUser -ObjectID $UPN
-    #Start Mailbox Check Loop
-    while ($MailboxExistsCheck -ne "YES") {
-        try {
-            Get-EXOMailbox $UPN -ErrorAction Throw | Out-Null
-            $MailboxExistsCheck = "YES"
-        }
-        catch {
-            Write-Verbose "Mailbox Does Not Exist, Waiting 60 Seconds and Trying Again"
-            Start-Sleep -Seconds 60
-            $MailboxExistsCheck = "NO"
-        }
-    }#End Mailbox Check Loop
+    MailboxExistCheck
     Write-Verbose "Mailbox Exists, Please Select Groups To Add"
     foreach($group in Get-AzureADMSGroup | Where-Object {$_.GroupTypes -notcontains "DynamicMembership"} | Select-Object DisplayName,Description,ObjectId | Sort-Object DisplayName | Out-GridView -Passthru -Title "Hold Ctrl to select multiple groups" | Select-Object -ExpandProperty ObjectId){
         Add-AzureADGroupMember -ObjectId $group -RefObjectId $user.ObjectID
