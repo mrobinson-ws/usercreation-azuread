@@ -513,7 +513,22 @@ while ($quitboxOutput -ne "NO"){
             Set-AzureADUser -ObjectID $UPN -State $stateTextbox.Text
         }
         if($CustomAttribute1Textbox.Text){
-            Write-Verbose "Waiting To Set CustomAtrribute1 Until Mailbox is Created"
+            Write-Verbose "Checking If Mailbox Exists"
+            Clear-Variable MailboxExistsCheck -ErrorAction SilentlyContinue
+            #Start Mailbox Check Loop
+            while ($MailboxExistsCheck -ne "YES") {
+                try {
+                    Get-EXOMailbox $UPN -ErrorAction Throw | Out-Null
+                    $MailboxExistsCheck = "YES"
+                }
+                catch {
+                    Write-Verbose "Mailbox Does Not Exist, Waiting 60 Seconds and Trying Again"
+                    Start-Sleep -Seconds 60
+                    $MailboxExistsCheck = "NO"
+                }
+            }#End Mailbox Check Loop
+            Set-Mailbox $UPN -CustomAttribute1 $CustomAttribute1Textbox.Text
+            Write-Verbose "Mailbox Exists, Added CustomAttribute1"
         }
     }
     else { 
@@ -576,9 +591,9 @@ while ($quitboxOutput -ne "NO"){
         
     #####Group Out-GridView to Select Groups#####
     # Pull User ObjectID and Group ObjectID to add member to all groups selected, skipping dynamic
-    Write-Verbose "Please Select Groups Required"
     Clear-Variable user -ErrorAction SilentlyContinue
     Clear-Variable group -ErrorAction SilentlyContinue
+    Write-Verbose "Checking If Mailbox Exists"
     Clear-Variable MailboxExistsCheck -ErrorAction SilentlyContinue
     $user = Get-AzureADUser -ObjectID $UPN
     #Start Mailbox Check Loop
@@ -594,16 +609,10 @@ while ($quitboxOutput -ne "NO"){
         }
     }#End Mailbox Check Loop
     Write-Verbose "Mailbox Exists, Please Select Groups To Add"
-    if($MailboxExistsCheck = "YES"){
-            foreach($group in Get-AzureADMSGroup | Where-Object {$_.GroupTypes -notcontains "DynamicMembership"} | Select-Object DisplayName,Description,ObjectId | Sort-Object DisplayName | Out-GridView -Passthru -Title "Hold Ctrl to select multiple groups" | Select-Object -ExpandProperty ObjectId){
-                Add-AzureADGroupMember -ObjectId $group -RefObjectId $user.ObjectID
-            }
-            Write-Verbose "Selected Groups Added"
-            if($CustomAttribute1Textbox.Text){
-            Set-Mailbox $UPN -CustomAttribute1 $CustomAttribute1Textbox.Text
-            Write-Verbose "Added CustomAttribute1 As Mailbox Now Exists"
-            }
-        }
+    foreach($group in Get-AzureADMSGroup | Where-Object {$_.GroupTypes -notcontains "DynamicMembership"} | Select-Object DisplayName,Description,ObjectId | Sort-Object DisplayName | Out-GridView -Passthru -Title "Hold Ctrl to select multiple groups" | Select-Object -ExpandProperty ObjectId){
+        Add-AzureADGroupMember -ObjectId $group -RefObjectId $user.ObjectID
+    }
+    Write-Verbose "Selected Groups Added"
     
 #Create Quit Prompt and Close While Loop
 $quitboxOutput = [System.Windows.Forms.MessageBox]::Show("Do you need to create another user?" , "User Creation Complete" , 4)
