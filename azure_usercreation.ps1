@@ -596,6 +596,7 @@ while ($quitboxOutput -ne "NO"){
             }
             else {
                 Write-Verbose "$SkuToFriendly.Item("$($ConvertedToSku.SkuID)") has no available licenses, please correct and run script again"
+                Break
             }
         }
     }
