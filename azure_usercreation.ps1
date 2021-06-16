@@ -588,11 +588,37 @@ while ($quitboxOutput -ne "NO"){
             $converttosku = $checkedlicense -replace '\s--\s.*'
             $License = New-Object -TypeName Microsoft.Open.AzureAD.Model.AssignedLicense
             $License.SkuID = $FriendlyToSku.Item("$($converttosku)")
-            $LicensesToAssign = New-Object -TypeName Microsoft.Open.AzureAD.Model.AssignedLicenses
-            $LicensesToAssign.AddLicenses = $License
-            Set-AzureADUserLicense -ObjectId $UPN -AssignedLicenses $LicensesToAssign
+            $ConvertedToSku = Get-AzureSubscribedSku -ObjectId $License.SkuID | Select-Object -Property ConsumedUnits -ExpandProperty PrepaidUnits
+            if($ConvertedToSku.Enabled - $ConvertedToSku.ConsumedUnits -ge 1){
+                $LicensesToAssign = New-Object -TypeName Microsoft.Open.AzureAD.Model.AssignedLicenses
+                $LicensesToAssign.AddLicenses = $License
+                Set-AzureADUserLicense -ObjectId $UPN -AssignedLicenses $LicensesToAssign
+            }
+            else {
+                Write-Verbose "$SkuToFriendly.Item("$($ConvertedToSku.SkuID)") has no available licenses, please correct and run script again"
+            }
         }
     }
+
+    #####Extra Detail Functionality#####
+    if ($result -eq [System.Windows.Forms.DialogResult]::OK) {
+        if($cityTextbox.Text){
+            Set-AzureADUser -ObjectId $UPN -City $cityTextbox.Text
+        }
+        if($stateTextbox.Text){
+            Set-AzureADUser -ObjectID $UPN -State $stateTextbox.Text
+        }
+        if($CustomAttribute1Textbox.Text){
+            MailboxExistCheck            
+            Set-Mailbox $UPN -CustomAttribute1 $CustomAttribute1Textbox.Text
+            Write-Verbose "Mailbox Exists, Added CustomAttribute1"
+        }
+    }
+    else { 
+        Write-Verbose "Exiting Script." 
+        Break
+    }
+    #####End Extra Details Functionality#####
         
     #####Group Out-GridView to Select Groups#####
     # Pull User ObjectID and Group ObjectID to add member to all groups selected, skipping dynamic
