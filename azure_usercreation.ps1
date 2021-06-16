@@ -282,14 +282,14 @@ function MailboxExistCheck {
     Clear-Variable MailboxExistsCheck -ErrorAction SilentlyContinue
     #Start Mailbox Check Wait Loop
     while ($MailboxExistsCheck -ne "YES") {
-    try {
-        Get-EXOMailbox $UPN -ErrorAction Throw | Out-Null
-        $MailboxExistsCheck = "YES"
-    }
-    catch {
-        Write-Verbose "Mailbox Does Not Exist, Waiting 60 Seconds and Trying Again"
-        Start-Sleep -Seconds 60
-        $MailboxExistsCheck = "NO"
+        try {
+            Get-EXOMailbox $UPN -ErrorAction Throw | Out-Null
+            $MailboxExistsCheck = "YES"
+        }
+        catch {
+            Write-Verbose "Mailbox Does Not Exist, Waiting 60 Seconds and Trying Again"
+            Start-Sleep -Seconds 60
+            $MailboxExistsCheck = "NO"
         }
     }#End Mailbox Check Wait Loop    
 }
