@@ -246,7 +246,7 @@ while ($QuitboxOutput -ne "NO"){
             }
             else
             {
-                $LicenseCheckTextBox.AppendText("Please Submit a Github Issue for Non-Matching SkuPartNumber $($License.SkuPartNumber) : https://github.com/mrobinson-ws/usercreation-azuread/issues")
+                $LicenseCheckTextBox.AppendText("`r`nPlease Submit a Github Issue for Non-Matching SkuPartNumber $($License.SkuPartNumber) : https://github.com/mrobinson-ws/usercreation-azuread/issues")
             }
         }
 
@@ -304,7 +304,6 @@ while ($QuitboxOutput -ne "NO"){
     $okButton.DialogResult = [System.Windows.Forms.DialogResult]::OK
     $okButton.Enabled = $false
     $userdetailForm.AcceptButton = $okButton
-    
     $userdetailForm.Controls.Add($okButton)
 
     $cancelButton = New-Object System.Windows.Forms.Button
