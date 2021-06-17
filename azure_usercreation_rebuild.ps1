@@ -7,9 +7,9 @@ Param()
 [void] [System.Reflection.Assembly]::LoadWithPartialName("System.Drawing") 
 [void] [System.Reflection.Assembly]::LoadWithPartialName("System.Windows.Forms")
 [void] [System.Windows.Forms.Application]::EnableVisualStyles()
-
+# Allow License Loop To Work
 $LicenseCheckValid = ""
-
+# Friendly Name Lookup Table
 $SkuToFriendly = @{
     "c42b9cae-ea4f-4ab7-9717-81576235ccac" = "DevPack E5 (No Teams or Audio)"
     "8f0c5670-4e56-4892-b06d-91c085d7004f" = "APP CONNECT IW"
@@ -139,6 +139,60 @@ $SkuToFriendly = @{
     "488ba24a-39a9-4473-8ee5-19291e71b002" = "Windows 10 Enterprise E5"
     "6470687e-a428-4b7a-bef2-8a291ad947c9" = "WINDOWS STORE FOR BUSINESS"
 }
+#Usage Location Lookup Table
+$UsageLocations=@{
+    "United States" = "US"
+    "United Kingdom" = "UK"
+}
+#Function to Check If Mailbox Exists Before Touching It
+function MailboxExistCheck {
+    Write-Verbose "Checking If Mailbox Exists"
+    Clear-Variable MailboxExistsCheck -ErrorAction SilentlyContinue
+    #Start Mailbox Check Wait Loop
+    while ($MailboxExistsCheck -ne "YES") {
+        try {
+            Get-EXOMailbox $UPN -ErrorAction Throw | Out-Null
+            $MailboxExistsCheck = "YES"
+        }
+        catch {
+            Write-Verbose "Mailbox Does Not Exist, Waiting 60 Seconds and Trying Again"
+            Start-Sleep -Seconds 60
+            $MailboxExistsCheck = "NO"
+        }
+    }#End Mailbox Check Wait Loop    
+}
+#Verification Check to enable OK button
+function CheckAllBoxes{
+    if ( $passwordTextbox.Text.Length -and ($domainComboBox.SelectedIndex -ge 0) -and $usernameTextbox.Text.Length -and $firstnameTextbox.Text.Length -and $lastnameTextbox.Text.Length )
+    {
+        $okButton.Enabled = $true
+    }
+    else {
+        $okButton.Enabled = $false
+    }
+}
+#####End of Declarations#####
+
+# Test And Connect To AzureAD If Needed
+try {
+    Write-Verbose -Message "Testing connection to Azure AD"
+    Get-AzureAdDomain -ErrorAction Stop | Out-Null
+    Write-Verbose -Message "Already connected to Azure AD"
+}
+catch {
+    Write-Verbose -Message "Connecting to Azure AD"
+    Connect-AzureAD
+}
+#Test And Connect To Microsoft Exchange Online If Needed
+try {
+    Write-Verbose -Message "Testing connection to Microsoft Exchange Online"
+    Get-EXOMailbox -ErrorAction Stop | Out-Null
+    Write-Verbose -Message "Already connected to Microsoft Exchange Online"
+}
+catch {
+    Write-Verbose -Message "Connecting to Microsoft Exchange Online"
+    Connect-ExchangeOnline
+}
 
 ##### Create License Check Refresh Loop #####
 while ($LicenseCheckValid -ne "YES") {
@@ -146,7 +200,7 @@ while ($LicenseCheckValid -ne "YES") {
     # Create Form
     $LicenseCheckForm = New-Object System.Windows.Forms.Form    
     $LicenseCheckForm.AutoSize = $true
-    $Licensecheck.Size = New-Object System.Drawing.Size(400,150)
+    $LicensecheckForm.Size = New-Object System.Drawing.Size(500,350)
     $LicenseCheckForm.MinimumSize = $LicenseCheckForm.Size
     $LicenseCheckForm.MaximizeBox = $false
     $LicenseCheckForm.StartPosition = "CenterScreen"
@@ -175,43 +229,48 @@ while ($LicenseCheckValid -ne "YES") {
     $LicenseCheckCancelButton.DialogResult = [System.Windows.Forms.DialogResult]::Cancel
     $LicenseCheckForm.CancelButton = $LicenseCheckCancelButton
     $LicenseCheckForm.Controls.Add($LicenseCheckCancelButton)
-
+    ##### End License Check Output Display #####
+    
     $Licenses =  Get-AzureADSubscribedSku | Select-Object -Property Sku*,ConsumedUnits -ExpandProperty PrepaidUnits
     foreach($License in $Licenses){
-        try {
+        $TempSkuCheck = $skuToFriendly.Item("$($License.SkuID)")
+        if($TempSkuCheck)
+        {
             $License.SkuPartNumber = $skuToFriendly.Item("$($License.SkuID)")
         }
-        catch {
-            $LicenseCheckTextBox.AppendText = "Please Submit a Github Issue for Non-Matching SkuPartNumber $($License.SkuPartNumber)"
+        else
+        {
+            $LicenseCheckTextBox.AppendText("Please Submit a Github Issue for Non-Matching SkuPartNumber $($License.SkuPartNumber)")
         }
     }
 
     $SelectedLicenses = $Licenses | Sort-Object SkuPartNumber | Out-GridView -Passthru -Title "Hold Ctrl For Multiple Licenses"
-    #Kill script if OK button not hit
+    # Kill script if OK button not hit
     if ($null -eq $SelectedLicenses) { Throw }
+    # Check License Count For Selected Licenses
     foreach($SelectedLicense in $SelectedLicenses){
         if($SelectedLicense.Enabled-$SelectedLicense.ConsumedUnits -ge 1){
             $Available = $SelectedLicense.Enabled-$SelectedLicense.ConsumedUnits
-            $LicenseCheckTextBox.AppendText("`rYou have $Available available $($SelectedLicense.SkuPartNumber) licenses")
+            $LicenseCheckTextBox.AppendText("`r`nYou have $Available available $($SelectedLicense.SkuPartNumber) licenses")
             $AvailableLicensecheck = "YES"
         }
         elseif($SelectedLicense.Enabled-$SelectedLicense.ConsumedUnits -le 0){
-            $LicenseCheckTextBox.AppendText("`rYou do not have any $($SelectedLicense.SkuPartNumber) licenses to assign, please acquire licenses and hit OK once done, or Cancel to Exit")
+            $LicenseCheckTextBox.AppendText("`r`nYou do not have any $($SelectedLicense.SkuPartNumber) licenses to assign, please acquire licenses and hit OK once done, or Cancel to Exit")
             $AvailableLicenseCheck = "NO"
         }    
     }
-    $result = $LicenseCheckForm.ShowDialog()
+    $LicenseCheckResult = $LicenseCheckForm.ShowDialog()
 
-    if ($result -eq [System.Windows.Forms.DialogResult]::OK) {
+    if ($LicenseCheckResult -eq [System.Windows.Forms.DialogResult]::OK) {
         if ($AvailableLicensecheck -eq "YES") {
             $LicenseCheckValid = "YES"
         }
         else {
             $LicenseCheckValid = "NO"
+            $LicenseCheckTextBox.AppendText("`r`nPlease Acquire Any Missing Licenses, Then Hit OK To Refresh")
         }
     }
     else {
         Throw
     }
-}
-##### End License Check Refresh Loop #####
+} ##### End License Check Refresh Loop #####
