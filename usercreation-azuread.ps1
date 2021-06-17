@@ -261,7 +261,7 @@ while ($QuitboxOutput -ne "NO"){
                 $AvailableLicenseCheck = "YES"
             }
             elseif($SelectedLicense.Enabled-$SelectedLicense.ConsumedUnits -le 0){
-                $LicenseCheckTextBox.AppendText("`r`nYou do not have any $($SelectedLicense.SkuPartNumber) licenses to assign, please acquire licenses and hit OK once done, or Cancel to Exit")
+                $LicenseCheckTextBox.AppendText("`r`nYou do not have any $($SelectedLicense.SkuPartNumber) licenses to assign, please acquire licenses and hit OK once to refresh, or Cancel to Exit")
                 $AvailableLicenseCheck = "NO"
             }    
         }
@@ -271,15 +271,13 @@ while ($QuitboxOutput -ne "NO"){
             if ($AvailableLicenseCheck -eq "YES") {
                 $LicenseCheckValid = "YES"
             }
-            else {
-                $LicenseCheckValid = "NO"
-                $LicenseCheckTextBox.AppendText("`r`nPlease Acquire Any Missing Licenses, Then Hit OK To Refresh")
-            }
         }
-        else {
-            Break
+        elseif ($LicenseCheckResult -eq [System.Windows.Forms.DialogResult]::Cancel) {
+            $LicenseCheckValid = "NO"
+            Write-Verbose "Exiting Script"
+            Throw
         }
-    } ##### End License Check Refresh Loop #####
+        } ##### End License Check Refresh Loop #####
 
     ##### Create User Details Form #####
     Clear-Variable passwordTextbox -ErrorAction SilentlyContinue
