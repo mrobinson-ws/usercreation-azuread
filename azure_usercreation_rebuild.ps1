@@ -8,10 +8,10 @@ Param()
 [void] [System.Reflection.Assembly]::LoadWithPartialName("System.Windows.Forms")
 [void] [System.Windows.Forms.Application]::EnableVisualStyles()
 # Allow License Loop To Work
-$LicenseCheckValid = ""
+Clear-Variable LicenseCheckValid -ErrorAction SilentlyContinue
 # Friendly Name Lookup Table
 $SkuToFriendly = @{
-    "c42b9cae-ea4f-4ab7-9717-81576235ccac" = "DevPack E5 (No Teams or Audio)"
+    "c42b9cae-ea4f-4ab7-9717-81576235ccac" = "DevPack E5 (No Windows or Audio)"
     "8f0c5670-4e56-4892-b06d-91c085d7004f" = "APP CONNECT IW"
     "0c266dff-15dd-4b49-8397-2bb16070ed52" = "Microsoft 365 Audio Conferencing"
     "2b9c8e7c-319c-43a2-a2a0-48c5c6161de7" = "AZURE ACTIVE DIRECTORY BASIC"
@@ -151,7 +151,7 @@ function MailboxExistCheck {
     #Start Mailbox Check Wait Loop
     while ($MailboxExistsCheck -ne "YES") {
         try {
-            Get-EXOMailbox $UPN -ErrorAction Throw | Out-Null
+            Get-Mailbox $UPN -ErrorAction Throw
             $MailboxExistsCheck = "YES"
         }
         catch {
@@ -194,88 +194,335 @@ catch {
     Connect-ExchangeOnline
 }
 
-##### Create License Check Refresh Loop #####
-while ($LicenseCheckValid -ne "YES") {
-    # Clear Loop Variables
-    Clear-Variable LicenseCheckTextBox.Text -ErrorAction SilentlyContinue
-    Clear-Variable AvailableLicenseCheck -ErrorAction SilentlyContinue
-    Clear-Variable Licenses -ErrorAction SilentlyContinue
-    Clear-Variable SelectedLicenses -ErrorAction SilentlyContinue
-    ##### Create License Check Output Display #####
-    # Create Form
-    $LicenseCheckForm = New-Object System.Windows.Forms.Form    
-    $LicenseCheckForm.AutoSize = $true
-    $LicensecheckForm.Size = New-Object System.Drawing.Size(500,350)
-    $LicenseCheckForm.MinimumSize = $LicenseCheckForm.Size
-    $LicenseCheckForm.MaximizeBox = $false
-    $LicenseCheckForm.StartPosition = "CenterScreen"
-    $LicenseCheckForm.TopMost = $True
+while ($QuitboxOutput -ne "NO"){
+    ##### Create License Check Refresh Loop #####
+    while ($LicenseCheckValid -ne "YES") {
+        # Clear Loop Variables
+        Clear-Variable LicenseCheckTextBox.Text -ErrorAction SilentlyContinue
+        Clear-Variable AvailableLicenseCheck -ErrorAction SilentlyContinue
+        Clear-Variable Licenses -ErrorAction SilentlyContinue
+        Clear-Variable SelectedLicenses -ErrorAction SilentlyContinue
+        ##### Create License Check Output Display #####
+        # Create Form
+        $LicenseCheckForm = New-Object System.Windows.Forms.Form    
+        $LicenseCheckForm.AutoSize = $true
+        $LicensecheckForm.Size = New-Object System.Drawing.Size(500,350)
+        $LicenseCheckForm.MinimumSize = $LicenseCheckForm.Size
+        $LicenseCheckForm.MaximizeBox = $false
+        $LicenseCheckForm.StartPosition = "CenterScreen"
+        $LicenseCheckForm.TopMost = $True
 
-    #Create Textbox To Output
-    $LicenseCheckTextBox = New-Object System.Windows.Forms.TextBox 
-    $LicenseCheckTextBox.Multiline = $True
-    $LicenseCheckTextBox.Autosize = $True
-    $LicenseCheckTextbox.Dock = [System.Windows.Forms.DockStyle]::Fill
-    $LicenseCheckForm.Controls.Add($LicenseCheckTextBox)
+        #Create Textbox To Output
+        $LicenseCheckTextBox = New-Object System.Windows.Forms.TextBox 
+        $LicenseCheckTextBox.Multiline = $True
+        $LicenseCheckTextBox.Autosize = $True
+        $LicenseCheckTextbox.Dock = [System.Windows.Forms.DockStyle]::Fill
+        $LicenseCheckForm.Controls.Add($LicenseCheckTextBox)
 
-    # Create OK Button
-    $LicenseCheckOKButton = New-Object System.Windows.Forms.Button
-    $LicenseCheckOKButton.TabIndex = 0
-    $LicenseCheckOkButton.Dock = [System.Windows.Forms.DockStyle]::Bottom
-    $LicenseCheckOKButton.Text = 'OK'
-    $LicenseCheckOKButton.DialogResult = [System.Windows.Forms.DialogResult]::OK
-    $LicenseCheckForm.AcceptButton = $LicenseCheckOKButton
-    $LicenseCheckForm.Controls.Add($LicenseCheckOKButton)
+        # Create OK Button
+        $LicenseCheckOKButton = New-Object System.Windows.Forms.Button
+        $LicenseCheckOKButton.TabIndex = 0
+        $LicenseCheckOkButton.Dock = [System.Windows.Forms.DockStyle]::Bottom
+        $LicenseCheckOKButton.Text = 'OK'
+        $LicenseCheckOKButton.DialogResult = [System.Windows.Forms.DialogResult]::OK
+        $LicenseCheckForm.AcceptButton = $LicenseCheckOKButton
+        $LicenseCheckForm.Controls.Add($LicenseCheckOKButton)
 
-    $LicenseCheckCancelButton = New-Object System.Windows.Forms.Button
-    $LicenseCheckCancelButton.TabIndex = 1
-    $LicenseCheckCancelButton.Dock = [System.Windows.Forms.DockStyle]::Bottom
-    $LicenseCheckCancelButton.Text = 'Cancel'
-    $LicenseCheckCancelButton.DialogResult = [System.Windows.Forms.DialogResult]::Cancel
-    $LicenseCheckForm.CancelButton = $LicenseCheckCancelButton
-    $LicenseCheckForm.Controls.Add($LicenseCheckCancelButton)
-    ##### End License Check Output Display #####
-    
-    $Licenses =  Get-AzureADSubscribedSku | Select-Object -Property Sku*,ConsumedUnits -ExpandProperty PrepaidUnits
-    foreach($License in $Licenses){
-        $TempSkuCheck = $skuToFriendly.Item("$($License.SkuID)")
-        if($TempSkuCheck)
-        {
-            $License.SkuPartNumber = $skuToFriendly.Item("$($License.SkuID)")
+        $LicenseCheckCancelButton = New-Object System.Windows.Forms.Button
+        $LicenseCheckCancelButton.TabIndex = 1
+        $LicenseCheckCancelButton.Dock = [System.Windows.Forms.DockStyle]::Bottom
+        $LicenseCheckCancelButton.Text = 'Cancel'
+        $LicenseCheckCancelButton.DialogResult = [System.Windows.Forms.DialogResult]::Cancel
+        $LicenseCheckForm.CancelButton = $LicenseCheckCancelButton
+        $LicenseCheckForm.Controls.Add($LicenseCheckCancelButton)
+        ##### End License Check Output Display #####
+        
+        $Licenses =  Get-AzureADSubscribedSku | Select-Object -Property Sku*,ConsumedUnits -ExpandProperty PrepaidUnits
+        foreach($License in $Licenses){
+            $TempSkuCheck = $skuToFriendly.Item("$($License.SkuID)")
+            if($TempSkuCheck)
+            {
+                $License.SkuPartNumber = $skuToFriendly.Item("$($License.SkuID)")
+            }
+            else
+            {
+                $LicenseCheckTextBox.AppendText("Please Submit a Github Issue for Non-Matching SkuPartNumber $($License.SkuPartNumber) : https://github.com/mrobinson-ws/usercreation-azuread/issues")
+            }
         }
-        else
-        {
-            $LicenseCheckTextBox.AppendText("Please Submit a Github Issue for Non-Matching SkuPartNumber $($License.SkuPartNumber) : https://github.com/mrobinson-ws/usercreation-azuread/issues")
-        }
-    }
 
-    $SelectedLicenses = $Licenses | Sort-Object SkuPartNumber | Out-GridView -Passthru -Title "Hold Ctrl For Multiple Licenses"
-    # Kill script if OK button not hit
-    if ($null -eq $SelectedLicenses) { Throw }
-    # Check License Count For Selected Licenses
-    foreach($SelectedLicense in $SelectedLicenses){
-        if($SelectedLicense.Enabled-$SelectedLicense.ConsumedUnits -ge 1){
-            $Available = $SelectedLicense.Enabled-$SelectedLicense.ConsumedUnits
-            $LicenseCheckTextBox.AppendText("`r`nYou have $Available available $($SelectedLicense.SkuPartNumber) licenses")
-            $AvailableLicenseCheck = "YES"
+        $SelectedLicenses = $Licenses | Sort-Object SkuPartNumber | Out-GridView -Passthru -Title "Hold Ctrl For Multiple Licenses"
+        # Kill script if OK button not hit
+        if ($null -eq $SelectedLicenses) { Throw }
+        # Check License Count For Selected Licenses
+        foreach($SelectedLicense in $SelectedLicenses){
+            if($SelectedLicense.Enabled-$SelectedLicense.ConsumedUnits -ge 1){
+                $Available = $SelectedLicense.Enabled-$SelectedLicense.ConsumedUnits
+                $LicenseCheckTextBox.AppendText("`r`nYou have $Available available $($SelectedLicense.SkuPartNumber) licenses")
+                $AvailableLicenseCheck = "YES"
+            }
+            elseif($SelectedLicense.Enabled-$SelectedLicense.ConsumedUnits -le 0){
+                $LicenseCheckTextBox.AppendText("`r`nYou do not have any $($SelectedLicense.SkuPartNumber) licenses to assign, please acquire licenses and hit OK once done, or Cancel to Exit")
+                $AvailableLicenseCheck = "NO"
+            }    
         }
-        elseif($SelectedLicense.Enabled-$SelectedLicense.ConsumedUnits -le 0){
-            $LicenseCheckTextBox.AppendText("`r`nYou do not have any $($SelectedLicense.SkuPartNumber) licenses to assign, please acquire licenses and hit OK once done, or Cancel to Exit")
-            $AvailableLicenseCheck = "NO"
-        }    
-    }
-    $LicenseCheckResult = $LicenseCheckForm.ShowDialog()
+        $LicenseCheckResult = $LicenseCheckForm.ShowDialog()
 
-    if ($LicenseCheckResult -eq [System.Windows.Forms.DialogResult]::OK) {
-        if ($AvailableLicenseCheck -eq "YES") {
-            $LicenseCheckValid = "YES"
+        if ($LicenseCheckResult -eq [System.Windows.Forms.DialogResult]::OK) {
+            if ($AvailableLicenseCheck -eq "YES") {
+                $LicenseCheckValid = "YES"
+            }
+            else {
+                $LicenseCheckValid = "NO"
+                $LicenseCheckTextBox.AppendText("`r`nPlease Acquire Any Missing Licenses, Then Hit OK To Refresh")
+            }
         }
         else {
-            $LicenseCheckValid = "NO"
-            $LicenseCheckTextBox.AppendText("`r`nPlease Acquire Any Missing Licenses, Then Hit OK To Refresh")
+            Break
+        }
+    } ##### End License Check Refresh Loop #####
+
+    ##### Create User Details Form #####
+    Clear-Variable passwordTextbox -ErrorAction SilentlyContinue
+    Clear-Variable domainComboBox -ErrorAction SilentlyContinue
+    Clear-Variable usernameTextbox -ErrorAction SilentlyContinue
+    Clear-Variable lastnameTextbox -ErrorAction SilentlyContinue
+    Clear-Variable firstnameTextbox -ErrorAction SilentlyContinue
+    Clear-Variable displayname -ErrorAction SilentlyContinue
+    Clear-Variable PasswordProfile -ErrorAction SilentlyContinue
+    Clear-Variable UPN -ErrorAction SilentlyContinue
+        
+    $userdetailForm = New-Object System.Windows.Forms.Form
+    $userdetailForm.Text = "User Details"
+    $userdetailForm.Autosize = $true
+    $userdetailForm.StartPosition = 'CenterScreen'
+    $userdetailForm.Topmost = $true
+
+    $okButton = New-Object System.Windows.Forms.Button
+    $okButton.TabIndex = 6
+    $okbutton.Dock = [System.Windows.Forms.DockStyle]::Bottom
+    $okButton.Text = 'OK'
+    $okButton.DialogResult = [System.Windows.Forms.DialogResult]::OK
+    $okButton.Enabled = $false
+    $userdetailForm.AcceptButton = $okButton
+    
+    $userdetailForm.Controls.Add($okButton)
+
+    $cancelButton = New-Object System.Windows.Forms.Button
+    $cancelbutton.TabIndex = 7
+    $cancelButton.Dock = [System.Windows.Forms.DockStyle]::Bottom
+    $cancelButton.Text = 'Cancel'
+    $cancelButton.DialogResult = [System.Windows.Forms.DialogResult]::Cancel
+    $userdetailForm.CancelButton = $cancelButton
+    $userdetailForm.Controls.Add($cancelButton)
+
+    $UsageLocationComboBox = New-Object System.Windows.Forms.ComboBox
+    $UsageLocationCombobox.TabIndex = 5
+    $UsageLocationComboBox.Dock = [System.Windows.Forms.DockStyle]::Top
+    $UsageLocationComboBox.DropDownStyle = [System.Windows.Forms.ComboBoxStyle]::DropDownList
+    $UsageLocationComboBox.FormattingEnabled = $true
+    foreach($UsageLocation in $UsageLocations.keys)
+    {
+        $null = $UsageLocationComboBox.Items.Add($usagelocation)
+    }
+    $UsageLocationComboBox.SelectedIndex = 0
+    $UsageLocationComboBox.Add_TextChanged({CheckAllBoxes})
+    $userdetailForm.Controls.Add($UsageLocationComboBox)
+    
+    $passwordTextbox = New-Object System.Windows.Forms.TextBox
+    $passwordTextbox.TabIndex = 4
+    $passwordTextbox.Dock = [System.Windows.Forms.DockStyle]::Top
+    $passwordTextbox.Add_TextChanged({CheckAllBoxes})
+    $userdetailForm.Controls.Add($passwordTextbox)
+    
+    $passwordLabel = New-Object System.Windows.Forms.Label
+    $passwordLabel.Dock = [System.Windows.Forms.DockStyle]::Top
+    $passwordLabel.Text = "Password"
+    $userdetailForm.Controls.Add($passwordLabel)
+
+    $domainComboBox = New-Object System.Windows.Forms.ComboBox
+    $domainComboBox.TabIndex = 3
+    $domainComboBox.Dock = [System.Windows.Forms.DockStyle]::Top
+    $domainComboBox.DropDownStyle = [System.Windows.Forms.ComboBoxStyle]::DropDownList
+    $domainComboBox.FormattingEnabled = $true
+    foreach($domain in Get-AzureADDomain){
+        $null = $domainComboBox.Items.add($domain.Name)
+    }
+    $domainCombobox.Add_TextChanged({CheckAllBoxes})
+    $userdetailForm.Controls.Add($domainComboBox)
+    
+    $domainLabel = New-Object System.Windows.Forms.Label
+    $domainLabel.Dock = [System.Windows.Forms.DockStyle]::Top
+    $domainLabel.Text = "@"
+    $userdetailForm.Controls.Add($domainLabel)
+
+    $usernameTextbox = New-Object System.Windows.Forms.TextBox
+    $usernameTextbox.TabIndex = 2
+    $usernameTextbox.Dock = [System.Windows.Forms.DockStyle]::Top
+    $usernameTextbox.Add_TextChanged({CheckAllBoxes})
+    $userdetailForm.Controls.Add($usernameTextbox)
+
+    $usernameLabel = New-Object System.Windows.Forms.Label
+    $usernameLabel.Dock = [System.Windows.Forms.DockStyle]::Top
+    $usernameLabel.Text = "Username"
+    $userdetailForm.Controls.Add($usernameLabel)
+
+    $lastnameTextbox = New-Object System.Windows.Forms.TextBox
+    $lastnameTextbox.TabIndex = 1
+    $lastnameTextbox.Dock = [System.Windows.Forms.DockStyle]::Top
+    $lastnameTextbox.Add_TextChanged({CheckAllBoxes})
+    $userdetailForm.Controls.Add($lastnameTextbox)
+    
+    $lastnameLabel = New-Object System.Windows.Forms.Label
+    $lastnameLabel.Dock = [System.Windows.Forms.DockStyle]::Top
+    $lastnameLabel.Text = "Last Name"
+    $userdetailForm.Controls.Add($lastnameLabel)
+
+    $firstnameTextbox = New-Object System.Windows.Forms.TextBox
+    $firstnameTextbox.TabIndex = 0
+    $firstnameTextbox.Dock = [System.Windows.Forms.DockStyle]::Top
+    $firstnameTextbox.Add_TextChanged({CheckAllBoxes})
+    $userdetailForm.Controls.Add($firstnameTextbox)
+
+    $firstnameLabel = New-Object System.Windows.Forms.Label
+    $firstnameLabel.Dock = [System.Windows.Forms.DockStyle]::Top
+    $firstnameLabel.Text = "First Name"
+    $userdetailForm.Controls.Add($firstnameLabel)
+
+    $userdetailForm.Add_Shown({$firstnameTextbox.Select()})
+    $result = $userdetailForm.ShowDialog()
+    #####End User Details Form#####
+
+    #####User Detail Functionality#####
+    #Create variables if OK button is pressed
+    if ($result -eq [System.Windows.Forms.DialogResult]::OK) {
+        $PasswordProfile = New-Object -TypeName Microsoft.Open.AzureAD.Model.PasswordProfile
+        $PasswordProfile.Password = $passwordTextbox.text
+        $UPN = $usernameTextbox.Text + "@" + $domainCombobox.Text
+        $displayname = $firstnameTextbox.text + " " + $lastnameTextbox.Text
+        $usageloc = $UsageLocations[$UsageLocationComboBox.Text]
+    }
+    else { 
+        Write-Verbose "Exiting Script." 
+        Break 
+    }
+    
+    #Test if User with matching UPN already exists, then exits
+    try {
+        Write-Verbose -Message "Testing If Username Does Not Exist"
+        Get-AzureAdUSer -ObjectID $UPN -ErrorAction Stop | Out-Null
+        $QuitboxOutput = "YES"
+    }
+    #Otherwise, creates user and assigns licenses selected in first step
+    catch {
+        Write-Verbose -Message "Username Does Not Exist, Creating User and Assigning Licenses"
+        $QuitboxOutput = "NO"
+    }
+    
+    if($QuitboxOutput -ne "YES"){
+        New-AzureADUser -DisplayName $displayname -PasswordProfile $PasswordProfile -UserPrincipalName $UPN -AccountEnabled $true -MailNickName "$($usernameTextbox.Text)" -UsageLocation $usageloc
+        foreach($SelectedLicense in $SelectedLicenses){
+            $AssignedLicense = New-Object -TypeName Microsoft.Open.AzureAD.Model.AssignedLicense
+            $AssignedLicense.SkuID = $SelectedLicense.SkuID
+            $Licenses = New-Object -TypeName Microsoft.Open.AzureAD.Model.AssignedLicenses 
+            $Licenses.AddLicenses = $AssignedLicense
+            Set-AzureADUserLicense -ObjectID $UPN -AssignedLicenses $Licenses
         }
     }
-    else {
-        Throw
+    #####End User Detail Functionality#####
+    
+    if($QuitBoxOutput -ne "YES"){
+        #####Start Extra User Detail Form#####
+        $additionaldetailForm = New-Object System.Windows.Forms.Form
+        $additionaldetailForm.Text = "Addtional Details"
+        $additionaldetailForm.Autosize = $true
+        $additionaldetailForm.StartPosition = 'CenterScreen'
+        $additionaldetailForm.Topmost = $true
+
+        $okButton = New-Object System.Windows.Forms.Button
+        $okButton.TabIndex = 3
+        $okbutton.Dock = [System.Windows.Forms.DockStyle]::Bottom
+        $okButton.Text = 'OK'
+        $okButton.DialogResult = [System.Windows.Forms.DialogResult]::OK
+        $additionaldetailForm.AcceptButton = $okButton
+        $additionaldetailForm.Controls.Add($okButton)
+
+        $cancelButton = New-Object System.Windows.Forms.Button
+        $cancelbutton.TabIndex = 4
+        $cancelButton.Dock = [System.Windows.Forms.DockStyle]::Bottom
+        $cancelButton.Text = 'Cancel'
+        $cancelButton.DialogResult = [System.Windows.Forms.DialogResult]::Cancel
+        $additionaldetailForm.CancelButton = $cancelButton
+        $additionaldetailForm.Controls.Add($cancelButton)
+
+        $CustomAttribute1Textbox = New-Object System.Windows.Forms.TextBox
+        $CustomAttribute1Textbox.TabIndex = 2
+        $CustomAttribute1Textbox.Dock = [System.Windows.Forms.DockStyle]::Top
+        $additionaldetailForm.Controls.Add($CustomAttribute1Textbox)
+
+        $CustomAttribute1Label = New-Object System.Windows.Forms.Label
+        $CustomAttribute1Label.Dock = [System.Windows.Forms.DockStyle]::Top
+        $CustomAttribute1Label.Text = "Custom Attribute 1"
+        $additionaldetailForm.Controls.Add($CustomAttribute1Label)
+
+        $stateTextbox = New-Object System.Windows.Forms.TextBox
+        $stateTextbox.TabIndex = 1
+        $stateTextbox.Dock = [System.Windows.Forms.DockStyle]::Top
+        $additionaldetailForm.Controls.Add($stateTextbox)
+
+        $stateLabel = New-Object System.Windows.Forms.Label
+        $stateLabel.Dock = [System.Windows.Forms.DockStyle]::Top
+        $stateLabel.Text = "State"
+        $additionaldetailForm.Controls.Add($stateLabel)
+
+        $cityTextbox = New-Object System.Windows.Forms.TextBox
+        $cityTextbox.TabIndex = 0
+        $cityTextbox.Dock = [System.Windows.Forms.DockStyle]::Top
+        $additionaldetailForm.Controls.Add($cityTextbox)
+
+        $cityLabel = New-Object System.Windows.Forms.Label
+        $cityLabel.Dock = [System.Windows.Forms.DockStyle]::Top
+        $cityLabel.Text = "City"
+        $additionaldetailForm.Controls.Add($cityLabel)
+
+        $result = $additionaldetailForm.ShowDialog()
+        ##### End Extra Details Form #####
+    
+        ##### Extra Detail Functionality #####
+        if ($result -eq [System.Windows.Forms.DialogResult]::OK) {
+            if($cityTextbox.Text){
+                Set-AzureADUser -ObjectId $UPN -City $cityTextbox.Text
+            }
+            if($stateTextbox.Text){
+                Set-AzureADUser -ObjectID $UPN -State $stateTextbox.Text
+            }
+            if($CustomAttribute1Textbox.Text){
+                MailboxExistCheck            
+                Set-Mailbox $UPN -CustomAttribute1 $CustomAttribute1Textbox.Text
+                Write-Verbose "Mailbox Exists, Added CustomAttribute1"
+            }
+        }
+        else { 
+            Write-Verbose "Exiting Script." 
+            Break
+        }
+    } ##### End Extra Details Functionality #####
+    
+    if($QuitboxOutput -ne "YES"){
+        #####Group Out-GridView to Select Groups#####
+        # Pull User ObjectID and Group ObjectID to add member to all groups selected, skipping dynamic
+        Clear-Variable user -ErrorAction SilentlyContinue
+        Clear-Variable group -ErrorAction SilentlyContinue
+        $user = Get-AzureADUser -ObjectID $UPN
+        MailboxExistCheck
+        Write-Verbose "Mailbox Exists, Please Select Groups To Add"
+        foreach($group in Get-AzureADMSGroup | Where-Object {$_.GroupTypes -notcontains "DynamicMembership"} | Select-Object DisplayName,Description,ObjectId | Sort-Object DisplayName | Out-GridView -Passthru -Title "Hold Ctrl to select multiple groups" | Select-Object -ExpandProperty ObjectId){
+            Add-AzureADGroupMember -ObjectId $group -RefObjectId $user.ObjectID
+        }
+        Write-Verbose "Selected Groups Added"
     }
-} ##### End License Check Refresh Loop #####
+
+    #Create Quit Prompt If loop not already triggered and Close While Loop
+    if($QuitboxOutput -ne "YES"){
+    $quitboxOutput = [System.Windows.Forms.MessageBox]::Show("Do you need to create another user?" , "User Creation Complete" , 4)
+    }
+}
