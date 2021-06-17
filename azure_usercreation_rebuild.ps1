@@ -151,7 +151,7 @@ function MailboxExistCheck {
     #Start Mailbox Check Wait Loop
     while ($MailboxExistsCheck -ne "YES") {
         try {
-            Get-Mailbox $UPN -ErrorAction Throw
+            Get-Mailbox $UPN -ErrorAction Stop
             $MailboxExistsCheck = "YES"
         }
         catch {
@@ -495,7 +495,7 @@ while ($QuitboxOutput -ne "NO"){
                 Set-AzureADUser -ObjectID $UPN -State $stateTextbox.Text
             }
             if($CustomAttribute1Textbox.Text){
-                MailboxExistCheck            
+                MailboxExistCheck          
                 Set-Mailbox $UPN -CustomAttribute1 $CustomAttribute1Textbox.Text
                 Write-Verbose "Mailbox Exists, Added CustomAttribute1"
             }
