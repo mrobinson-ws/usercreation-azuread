@@ -196,6 +196,11 @@ catch {
 
 ##### Create License Check Refresh Loop #####
 while ($LicenseCheckValid -ne "YES") {
+    # Clear Loop Variables
+    Clear-Variable LicenseCheckTextBox.Text -ErrorAction SilentlyContinue
+    Clear-Variable AvailableLicenseCheck -ErrorAction SilentlyContinue
+    Clear-Variable Licenses -ErrorAction SilentlyContinue
+    Clear-Variable SelectedLicenses -ErrorAction SilentlyContinue
     ##### Create License Check Output Display #####
     # Create Form
     $LicenseCheckForm = New-Object System.Windows.Forms.Form    
@@ -252,7 +257,7 @@ while ($LicenseCheckValid -ne "YES") {
         if($SelectedLicense.Enabled-$SelectedLicense.ConsumedUnits -ge 1){
             $Available = $SelectedLicense.Enabled-$SelectedLicense.ConsumedUnits
             $LicenseCheckTextBox.AppendText("`r`nYou have $Available available $($SelectedLicense.SkuPartNumber) licenses")
-            $AvailableLicensecheck = "YES"
+            $AvailableLicenseCheck = "YES"
         }
         elseif($SelectedLicense.Enabled-$SelectedLicense.ConsumedUnits -le 0){
             $LicenseCheckTextBox.AppendText("`r`nYou do not have any $($SelectedLicense.SkuPartNumber) licenses to assign, please acquire licenses and hit OK once done, or Cancel to Exit")
@@ -262,7 +267,7 @@ while ($LicenseCheckValid -ne "YES") {
     $LicenseCheckResult = $LicenseCheckForm.ShowDialog()
 
     if ($LicenseCheckResult -eq [System.Windows.Forms.DialogResult]::OK) {
-        if ($AvailableLicensecheck -eq "YES") {
+        if ($AvailableLicenseCheck -eq "YES") {
             $LicenseCheckValid = "YES"
         }
         else {
