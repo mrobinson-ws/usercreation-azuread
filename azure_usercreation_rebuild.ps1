@@ -186,7 +186,7 @@ catch {
 #Test And Connect To Microsoft Exchange Online If Needed
 try {
     Write-Verbose -Message "Testing connection to Microsoft Exchange Online"
-    Get-EXOMailbox -ErrorAction Stop | Out-Null
+    Get-Mailbox -ErrorAction Stop | Out-Null
     Write-Verbose -Message "Already connected to Microsoft Exchange Online"
 }
 catch {
@@ -245,7 +245,7 @@ while ($LicenseCheckValid -ne "YES") {
         }
         else
         {
-            $LicenseCheckTextBox.AppendText("Please Submit a Github Issue for Non-Matching SkuPartNumber $($License.SkuPartNumber)")
+            $LicenseCheckTextBox.AppendText("Please Submit a Github Issue for Non-Matching SkuPartNumber $($License.SkuPartNumber) : https://github.com/mrobinson-ws/usercreation-azuread/issues")
         }
     }
 
