@@ -195,6 +195,7 @@ catch {
 }
 
 while ($QuitboxOutput -ne "NO"){
+    Clear-Variable LicenseCheckValid -ErrorAction SilentlyContinue
     ##### Create License Check Refresh Loop #####
     while ($LicenseCheckValid -ne "YES") {
         # Clear Loop Variables
