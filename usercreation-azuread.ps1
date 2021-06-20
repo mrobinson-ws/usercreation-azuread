@@ -247,7 +247,7 @@ while ($QuitboxOutput -ne "NO"){
             }
             else
             {
-                $LicenseCheckTextBox.AppendText("`r`nPlease Submit a Github Issue for Non-Matching SkuPartNumber $($License.SkuPartNumber) : https://github.com/mrobinson-ws/usercreation-azuread/issues")
+                $LicenseCheckTextBox.AppendText("`r`nPlease Submit a Github Issue for Non-Matching SkuPartNumber $($License.SkuID) - $($License.SkuPartNumber) : https://github.com/mrobinson-ws/usercreation-azuread/issues")
             }
         }
 
@@ -430,6 +430,10 @@ while ($QuitboxOutput -ne "NO"){
     
     if($QuitBoxOutput -ne "YES"){
         #####Start Extra User Detail Form#####
+        Clear-Variable CustomAttribute1Textbox -ErrorAction SilentlyContinue
+        Clear-Variable cityTextbox -ErrorAction SilentlyContinue
+        Clear-Variable stateTextbox -ErrorAction SilentlyContinue
+        
         $additionaldetailForm = New-Object System.Windows.Forms.Form
         $additionaldetailForm.Text = "Addtional Details"
         $additionaldetailForm.Autosize = $true
@@ -509,14 +513,21 @@ while ($QuitboxOutput -ne "NO"){
         #####Group Out-GridView to Select Groups#####
         # Pull User ObjectID and Group ObjectID to add member to all groups selected, skipping dynamic
         Clear-Variable user -ErrorAction SilentlyContinue
-        Clear-Variable group -ErrorAction SilentlyContinue
+        Clear-Variable groups -ErrorAction SilentlyContinue
+		
         $user = Get-AzureADUser -ObjectID $UPN
         MailboxExistCheck
         Write-Verbose "Mailbox Exists, Please Select Groups To Add"
-        foreach($group in Get-AzureADMSGroup | Where-Object {$_.GroupTypes -notcontains "DynamicMembership"} | Select-Object DisplayName,Description,ObjectId | Sort-Object DisplayName | Out-GridView -Passthru -Title "Hold Ctrl to select multiple groups" | Select-Object -ExpandProperty ObjectId){
-            Add-AzureADGroupMember -ObjectId $group -RefObjectId $user.ObjectID
+        $Groups = Get-AzureADMSGroup | Where-Object {$_.GroupTypes -notcontains "DynamicMembership"} | Select-Object DisplayName,Description,ObjectId | Sort-Object DisplayName | Out-GridView -Passthru -Title "Hold Ctrl to select multiple groups" | Select-Object -ExpandProperty ObjectId
+		if ($Groups){
+			foreach($group in $Groups){
+				Add-AzureADGroupMember -ObjectId $group -RefObjectId $user.ObjectID
+			}
+            Write-Verbose "Selected Groups Added"
+		}
+        else {
+            Write-Verbose "Group Selection Cancelled"
         }
-        Write-Verbose "Selected Groups Added"
     }
 
     #Create Quit Prompt If loop not already triggered and Close While Loop
