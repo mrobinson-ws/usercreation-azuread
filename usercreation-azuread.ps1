@@ -491,13 +491,13 @@ while ($QuitboxOutput -ne "NO"){
     
         ##### Extra Detail Functionality #####
         if ($result -eq [System.Windows.Forms.DialogResult]::OK) {
-            if($cityTextbox.Text){
+            if([string]::IsNullOrwhiteSpace($cityTextbox.Text) -eq $false){
                 Set-AzureADUser -ObjectId $UPN -City $cityTextbox.Text
             }
-            if($stateTextbox.Text){
+            if([string]::IsNullOrWhiteSpace($stateTextbox.Text) -eq $false){
                 Set-AzureADUser -ObjectID $UPN -State $stateTextbox.Text
             }
-            if($CustomAttribute1Textbox.Text){
+            if([string]::IsNullOrWhiteSpace($CustomAttribute1Textbox.Text) -eq $false){
                 MailboxExistCheck          
                 Set-Mailbox $UPN -CustomAttribute1 $CustomAttribute1Textbox.Text
                 Write-Verbose "Mailbox Exists, Added CustomAttribute1"
