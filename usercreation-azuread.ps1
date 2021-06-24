@@ -11,6 +11,9 @@ Param()
 Clear-Variable LicenseCheckValid -ErrorAction SilentlyContinue
 # Friendly Name Lookup Table
 $SkuToFriendly = @{
+    "9c7bff7a-3715-4da7-88d3-07f57f8d0fb6" = "D365_SALES_PRO_IW"
+    "6070a4c8-34c6-4937-8dfb-39bbc6397a60" = "MEETING_ROOM"
+    "8c4ce438-32a7-4ac5-91a6-e22ae08d9c8b" = "RIGHTSMANAGEMENT_ADHOC"
     "c42b9cae-ea4f-4ab7-9717-81576235ccac" = "DevPack E5 (No Windows or Audio)"
     "8f0c5670-4e56-4892-b06d-91c085d7004f" = "APP CONNECT IW"
     "0c266dff-15dd-4b49-8397-2bb16070ed52" = "Microsoft 365 Audio Conferencing"
