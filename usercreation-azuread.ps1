@@ -521,7 +521,7 @@ while ($QuitboxOutput -ne "NO"){
         $user = Get-AzureADUser -ObjectID $UPN
         MailboxExistCheck
         Write-Verbose "Mailbox Exists, Please Select Groups To Add"
-        $Groups = Get-AzureADMSGroup -All $true | Where-Object {$_.GroupTypes -notcontains "DynamicMembership"} | Select-Object DisplayName,Description,ObjectId | Sort-Object DisplayName | Out-GridView -Passthru -Title "Hold Ctrl to select multiple groups" | Select-Object -ExpandProperty ObjectId
+        $Groups = Get-AzureADMSGroup -All $true | Where-Object {$_.GroupTypes -notcontains "DynamicMembership"} | Select-Object DisplayName,Description,Id | Sort-Object DisplayName | Out-GridView -Passthru -Title "Hold Ctrl to select multiple groups" | Select-Object -ExpandProperty Id
 		if ($Groups){
 			foreach($group in $Groups){
 				Add-AzureADGroupMember -ObjectId $group -RefObjectId $user.ObjectID
